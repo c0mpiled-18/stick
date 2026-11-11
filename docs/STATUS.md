@@ -1,17 +1,17 @@
 # Stick：共同開發計畫與狀態
 
 > **這一頁是全隊唯一的進度正本。** 做完一項就把 `[ ]` 改成 `[x]`、填上時間，推上來。卡住超過 10 分鐘就寫在最下面的「卡住」。
-> 最後更新：20:54（Felix）：**三段已併進 `main`**（A＋B＋C，34 個測試通過）。之後請從 `main` 開分支或直接拉 `main`。前一筆：20:47（ryan）：C 段的伺服器與網頁完成，在 `feat/agent`（已併入 `feat/access` 的 `review.js`），真模型走完一輪。前一筆：20:40（Felix）：`feat/ingest` 併入 `feat/access` 的 `review.js`，真模型走完審稿、遮蔽、重審；頻道改認三個正式頻道。前一筆：20:16（Felix）：A 段五項完成、已接上 B 的 db.js。前一筆：20:10（Felix）：分工填上人名、地基推上 main。前一筆 20:05（antonshuo）：場景改為公關審稿，見下方「19:50 改了什麼」；分工待 Felix 依新場景更新
+> 最後更新：21:02（Felix）：**鏡 2、鏡 3 在 Discord 上實測通過**（`speak.js shot2`、`shot3` → 機器人 4 秒回覆 → 網頁主管 3 條、專員 1 條加遮蔽提示）。只剩鏡 5 重審沒驗。前一筆：20:54（Felix）：**三段已併進 `main`**（A＋B＋C，34 個測試通過）。之後請從 `main` 開分支或直接拉 `main`。前一筆：20:47（ryan）：C 段的伺服器與網頁完成，在 `feat/agent`（已併入 `feat/access` 的 `review.js`），真模型走完一輪。前一筆：20:40（Felix）：`feat/ingest` 併入 `feat/access` 的 `review.js`，真模型走完審稿、遮蔽、重審；頻道改認三個正式頻道。前一筆：20:16（Felix）：A 段五項完成、已接上 B 的 db.js。前一筆：20:10（Felix）：分工填上人名、地基推上 main。前一筆 20:05（antonshuo）：場景改為公關審稿，見下方「19:50 改了什麼」；分工待 Felix 依新場景更新
 > 細節看 `docs/build-plan.md`（影片、資料格式、旁白）與 `docs/intent-map.md`（架構圖）。
 
 ## 現在在哪
 
 | | |
 |---|---|
-| 現在時間 | 20:54 |
+| 現在時間 | 21:02 |
 | 功能凍結 | **21:45**（之後只錄影與交件） |
 | 交件截止 | 22:45 |
-| 目前進度 | **`main` 上三段程式都在**：機器人、資料庫與讀取口、審稿、伺服器與網頁。函式層用真模型走完審稿、遮蔽、重審。**還沒做：在 Discord `#pr-drafts` 用 Erin 的名字真的交一次稿、走到網頁出現結果。** |
+| 目前進度 | `main` 上三段程式都在，34 個測試通過。**Discord → 機器人 → 脈絡 → 審稿 → 網頁，鏡 2、鏡 3 實測通過（21:00）。還沒驗：鏡 5（`speak.js shot5`，v2 過審後 C4 觸發重審）。** 錄影前要重設資料庫（裡面有 Felix 20:20 的測試訊息，會顯示成 Alice 在工程頻道講話）。 |
 | 下一個檢查點 | **21:00 三段接起來走一遍** |
 
 ## 19:50 改了什麼
@@ -127,7 +127,7 @@ SQLite 一個檔 `stick.db`，五張表，**只新增、不修改、不刪除**�
 - [x] `src/ingest.js`：模型整理成脈絡，非逐字原話丟掉（20:07，真模型每則 1 到 2 秒）
 - [x] 等級＝`max(頻道下限, 模型判斷)`（測試守著）
 - [x] 寫完脈絡發 `context_added` 事件；`payload` 是 `{ context_item_ids, topics, message_id }`
-- [ ] `!review` 指令接到審稿：程式已接上（`feat/ingest` `5d2fc9b`）。20:40 用真模型直接呼叫函式驗過：v1 → `block` 三條、Erin 的版本遮掉兩條、沒有 Stick → `ok`、v2 → `ok`、C4 進來 → v2 重審成 `needs_change`。**還沒驗：在 Discord `#pr-drafts` 真的打 `!review`**（要有人交稿）
+- [x] `!review` 指令接到審稿（21:00 Discord 實測：Erin 用 webhook 交 v1 → 4 秒後機器人在 `#pr-drafts` 回 `block`，給 Erin 的版本只列日期那條，遮蔽的合併成一條）
 
 ### B：誰看得到什麼
 > **A、C 現在就能用**：`git merge origin/feat/access`（或 `git checkout origin/feat/access -- src/db.js src/access.js config/people.json scripts/`），再 `npm run seed`。多出來的讀取函式：`listMessages`、`getMessage`、`getDraft`、`listReviews(draftId)`；`insertDraft` 給 `parent_id` 會自動算 `revision`。測試用 `openStore(':memory:')`。
@@ -154,7 +154,7 @@ SQLite 一個檔 `stick.db`，五張表，**只新增、不修改、不刪除**�
 - [x] `onContextAdded`：主題相關的稿件重審（在 `src/review.js`；伺服器或機器人呼叫 `startReReviewLoop()` 就會自動跑）
 
 ### 一起
-- [ ] 21:00 三段接通：程式已合（20:54，`main`）；**還差從 Discord 走到網頁的實測**。Felix 這邊機器人與伺服器（埠 3940）開著，用 `speak.js shot2`、`shot3` 發就能驗
+- [x] 21:00 三段接通：程式已合（20:54，`main`）；鏡 2、鏡 3 從 Discord 走到網頁實測通過（21:00）。機器人與伺服器（埠 3940）在 Felix 這台開著，機器人開到 22:30
 - [ ] 重審：第 2 版過審後，新訊息讓它被改判
 - [ ] 錄影（2 分鐘內）
 - [ ] README（英文）

@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stick</title>
+<style>
+  :root {
+    --bg: #f6f5f1; --panel: #ffffff; --ink: #1c1b18; --muted: #6b6860; --line: #e4e1d8;
+    --accent: #2f4bd8;
+    --ok: #17794a; --ok-bg: #e3f4ea;
+    --warn: #9a5b00; --warn-bg: #fdf0d5;
+    --block: #b3261e; --block-bg: #fde7e4;
+    --public: #4a6b57; --internal: #7a5a12; --restricted: #a1281f;
+    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; }
+  header { display: flex; align-items: center; gap: 20px; padding: 14px 28px; background: var(--panel); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; }
+  .brand { font-weight: 700; font-size: 20px; letter-spacing: -0.02em; }
+  .brand small { font-weight: 400; font-size: 13px; color: var(--muted); margin-left: 10px; letter-spacing: 0; }
+  .who { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  .who > span { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+  .seg { display: flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--bg); }
+  .seg button { border: 0; background: none; padding: 7px 14px; font: inherit; cursor: pointer; color: var(--muted); line-height: 1.2; text-align: left; }
+  .seg button b { display: block; color: var(--ink); font-size: 14px; }
+  .seg button i { font-style: normal; font-size: 11px; }
+  .seg button + button { border-left: 1px solid var(--line); }
+  .seg button.on { background: var(--ink); color: #cfccc3; }
+  .seg button.on b { color: #fff; }
+  main { display: grid; grid-template-columns: 400px 1fr; gap: 24px; padding: 24px 28px 60px; max-width: 1280px; margin: 0 auto; }
+  h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 12px; font-weight: 600; display: flex; align-items: baseline; gap: 8px; }
+  h2 em { font-style: normal; text-transform: none; letter-spacing: 0; font-weight: 400; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 12px; }
+  .lvl { display: inline-block; font: 600 11px/1 var(--mono); text-transform: uppercase; letter-spacing: 0.04em; padding: 4px 7px; border-radius: 5px; border: 1px solid currentColor; }
+  .lvl.public { color: var(--public); } .lvl.internal { color: var(--internal); } .lvl.restricted { color: var(--restricted); background: #fff4f2; }
+  .ctx { transition: box-shadow .2s, border-color .2s; }
+  .ctx.hit { border-color: var(--accent); box-shadow: 0 0 0 3px #2f4bd822; }
+  .ctx .top { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .ctx .top .id { font-family: var(--mono); margin-left: auto; }
+  .ctx p { margin: 0 0 8px; }
+  blockquote { margin: 0; padding: 6px 10px; border-left: 3px solid var(--line); color: #45423b; font-size: 13.5px; background: #faf9f6; border-radius: 0 6px 6px 0; }
+  a.src { color: var(--accent); text-decoration: none; font-size: 12px; white-space: nowrap; }
+  a.src:hover { text-decoration: underline; }
+  .hidden-note { font-size: 13px; color: var(--muted); border: 1px dashed #cfcbbf; border-radius: 12px; padding: 12px 16px; }
+  .empty { color: var(--muted); font-size: 14px; padding: 18px 16px; border: 1px dashed #cfcbbf; border-radius: 12px; }
+  .draft.old { opacity: .62; }
+  .draft .meta { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .draft .meta .rev { font: 600 11px/1 var(--mono); background: var(--bg); border: 1px solid var(--line); border-radius: 5px; padding: 4px 6px; color: var(--ink); }
+  .draft .text { font: 16px/1.55 Georgia, "Times New Roman", serif; margin: 0 0 14px; }
+  .verdict { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 9px; font-weight: 600; }
+  .verdict small { font-weight: 400; margin-left: auto; font-size: 12px; opacity: .85; text-align: right; }
+  .verdict.ok { background: var(--ok-bg); color: var(--ok); }
+  .verdict.needs_change { background: var(--warn-bg); color: var(--warn); }
+  .verdict.block { background: var(--block-bg); color: var(--block); }
+  .verdict.wait { background: #eceaf7; color: #3d3a7a; }
+  .tag { font: 600 10.5px/1 var(--mono); text-transform: uppercase; letter-spacing: .05em; padding: 4px 6px; border-radius: 5px; background: #0000000d; }
+  .issue { border-top: 1px solid var(--line); padding: 12px 2px 4px; }
+  .issue:first-of-type { border-top: 0; }
+  .issue .n { font: 600 12px/1 var(--mono); color: var(--muted); margin-right: 6px; }
+  .issue .fix { margin: 4px 0 8px; color: #33312c; }
+  .issue .fix b { font-weight: 600; }
+  .issue .cite { display: flex; gap: 12px; align-items: flex-start; margin: 6px 0; }
+  .issue .cite blockquote { flex: 1; }
+  .issue .srcs { display: flex; flex-direction: column; gap: 2px; padding-top: 5px; min-width: 150px; }
+  .issue .srcs span { font-size: 12px; color: var(--muted); }
+  .issue.redacted { color: var(--muted); display: flex; gap: 10px; align-items: center; }
+  .issue.redacted .lock { font-size: 18px; }
+  .history { font-size: 12px; color: var(--muted); margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .history .h { padding: 2px 7px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); }
+  .spin { width: 14px; height: 14px; border: 2px solid currentColor; border-right-color: transparent; border-radius: 50%; animation: r .8s linear infinite; }
+  @keyframes r { to { transform: rotate(360deg); } }
+  form { margin-bottom: 20px; }
+  textarea { width: 100%; min-height: 76px; resize: vertical; border: 1px solid var(--line); border-radius: 9px; padding: 10px 12px; font: 15px/1.5 Georgia, serif; background: #fffefb; color: var(--ink); }
+  textarea:focus { outline: 2px solid #2f4bd855; border-color: var(--accent); }
+  .row { display: flex; align-items: center; gap: 14px; margin-top: 10px; font-size: 13px; color: var(--muted); }
+  .row button { margin-left: auto; border: 0; background: var(--ink); color: #fff; font: 600 14px/1 inherit; padding: 10px 16px; border-radius: 9px; cursor: pointer; }
+  .row button:disabled { opacity: .4; cursor: default; }
+  .err { color: var(--block); font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">Stick<small>shared memory for teams of people and agents</small></div>
+  <div class="who"><span>Viewing as</span><div class="seg" id="seg"></div></div>
+</header>
+<main>
+  <section>
+    <h2>Team context <em id="ctx-sub"></em></h2>
+    <div id="context"></div>
+  </section>
+  <section>
+    <h2>Drafts and reviews</h2>
+    <form id="form" class="card">
+      <textarea id="text" placeholder="Paste a draft to submit it for review…"></textarea>
+      <div class="row">
+        <span id="as"></span>
+        <label><input type="checkbox" id="nostick"> Before: review without Stick</label>
+        <span class="err" id="err"></span>
+        <button id="send" type="submit">Submit for review</button>
+      </div>
+    </form>
+    <div id="drafts"></div>
+  </section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const safeUrl = (u) => (/^https?:\/\//i.test(u ?? '') ? u : null);
+const ROLE = { pr_staff: 'PR staff', pr_lead: 'PR lead', engineering: 'Engineering', legal: 'Legal' };
+const VERDICT = { ok: 'Approved', needs_change: 'Needs changes', block: 'Blocked' };
+const time = (iso) => (iso ? new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '');
+
+let viewer = decodeURIComponent(location.hash.slice(1)) || 'Erin';
+let last = '';
+
+function renderSeg(s) {
+  $('seg').innerHTML = s.people
+    .map((p) => `<button data-v="${esc(p.name)}" class="${p.name === s.viewer ? 'on' : ''}"><b>${esc(p.name)}</b><i>${esc(ROLE[p.role] ?? p.role)}</i></button>`)
+    .join('');
+}
+
+function renderContext(s) {
+  const { items, excludedCount } = s.context;
+  $('ctx-sub').textContent = `· ${s.viewer} can see ${s.clearance.join(', ') || 'nothing'}`;
+  const cards = items
+    .slice()
+    .reverse()
+    .map((i) => {
+      const url = safeUrl(i.url);
+      return `<div class="card ctx" id="ctx-${i.id}">
+        <div class="top"><span class="lvl ${esc(i.sensitivity)}">${esc(i.sensitivity)}</span><span>${esc(i.author ?? '')} in #${esc(i.channel ?? '')}</span><span class="id">C${i.id}</span></div>
+        <p>${esc(i.summary)}</p>
+        <blockquote>“${esc(i.source_quote)}”</blockquote>
+        ${url ? `<div style="margin-top:6px"><a class="src" href="${esc(url)}" target="_blank" rel="noopener">Open original message ↗</a></div>` : ''}
+      </div>`;
+    })
+    .join('');
+  const hidden = excludedCount ? `<div class="hidden-note">🔒 ${excludedCount} more item${excludedCount > 1 ? 's' : ''} above ${esc(s.viewer)}’s access level. Content not shown.</div>` : '';
+  $('context').innerHTML = cards + hidden || '<div class="empty">No context yet. Stick is listening to the team channels.</div>';
+}
+
+function renderIssue(issue, n) {
+  if (issue.redacted) return `<div class="issue redacted"><span class="lock">🔒</span><span><span class="n">${n}</span>${esc(issue.text)}</span></div>`;
+  // 一句原話，加上每個出處（作者、頻道、原訊息連結）
+  const sources = (issue.sources ?? [])
+    .map((src) => {
+      const url = safeUrl(src.url);
+      const label = `C${Number(src.id)} · ${esc(src.author ?? '')} · #${esc(src.channel ?? '')}`;
+      return url
+        ? `<a class="src q" data-item="${Number(src.id)}" href="${esc(url)}" target="_blank" rel="noopener" title="Open the original message">${label} ↗</a>`
+        : `<span class="q" data-item="${Number(src.id)}">${label}</span>`;
+    })
+    .join('');
+  const quotes = issue.quote || sources ? `<div class="cite">${issue.quote ? `<blockquote>“${esc(issue.quote)}”</blockquote>` : ''}<div class="srcs">${sources}</div></div>` : '';
+  return `<div class="issue">
+    <div><span class="n">${n}</span>${esc(issue.text)} ${issue.sensitivity && issue.sensitivity !== 'public' ? `<span class="lvl ${esc(issue.sensitivity)}">${esc(issue.sensitivity)}</span>` : ''}</div>
+    ${issue.suggestion ? `<div class="fix"><b>Suggested fix:</b> ${esc(issue.suggestion)}</div>` : ''}
+    ${quotes}
+  </div>`;
+}
+
+function renderDraft(d) {
+  const r = d.reviews.at(-1);
+  let verdict;
+  if (!r && !d.reviewing && !d.error) verdict = `<div class="verdict wait">Not reviewed yet</div>`;
+  else if (d.reviewing) verdict = `<div class="verdict wait"><span class="spin"></span>Reviewing…</div>`;
+  else if (d.error && !r) verdict = `<div class="verdict block">Review failed<small>${esc(d.error)}</small></div>`;
+  else {
+    const how = r.with_stick ? `through ${esc(r.reviewer)}’s access` : 'no team context';
+    const tags = (r.with_stick ? '' : '<span class="tag">Before</span>') + (r.trigger === 'context_added' ? '<span class="tag">Re-reviewed</span>' : '');
+    verdict = `<div class="verdict ${esc(r.verdict)}">${esc(VERDICT[r.verdict] ?? r.verdict)} ${tags}<small>${how}<br>${time(r.at)}</small></div>`;
+    if (d.stale) verdict += `<div class="verdict wait" style="margin-top:8px"><span class="spin"></span>New context arrived since this review. Needs re-review.</div>`;
+  }
+  const issues = r && !d.reviewing ? r.issues.map((x, i) => renderIssue(x, i + 1)).join('') : '';
+  const none = r && !d.reviewing && r.issues.length === 0 ? `<div class="issue" style="color:var(--muted)">No conflicts with what the team has said.</div>` : '';
+  const history = d.reviews.length > 1
+    ? `<div class="history">History: ${d.reviews.map((x) => `<span class="h">${esc(VERDICT[x.verdict] ?? x.verdict)}${x.trigger === 'context_added' ? ' (new context)' : ''}${x.with_stick ? '' : ' (before)'} ${time(x.at)}</span>`).join('→')}</div>`
+    : '';
+  return `<div class="card draft ${d.latest ? '' : 'old'}">
+    <div class="meta"><span class="rev">v${d.revision}</span><span>${esc(d.author)}${d.title ? ` · ${esc(d.title)}` : ''}</span><span style="margin-left:auto">${d.latest ? '' : 'superseded · '}${time(d.created_at)}</span></div>
+    <p class="text">${esc(d.text)}</p>
+    ${verdict}${issues}${none}${history}
+  </div>`;
+}
+
+function render(s) {
+  renderSeg(s);
+  renderContext(s);
+  $('drafts').innerHTML = s.drafts.map(renderDraft).join('') || '<div class="empty">No drafts yet.</div>';
+  $('as').textContent = `Submitting as ${s.viewer}`;
+}
+
+async function tick() {
+  try {
+    const res = await fetch(`/api/state?viewer=${encodeURIComponent(viewer)}`);
+    const text = await res.text();
+    if (text !== last) {
+      last = text;
+      render(JSON.parse(text));
+    }
+  } catch { /* 伺服器暫時沒回應，下一秒再試 */ }
+}
+
+$('seg').addEventListener('click', (e) => {
+  const b = e.target.closest('button');
+  if (!b) return;
+  viewer = b.dataset.v;
+  location.hash = encodeURIComponent(viewer);
+  tick();
+});
+
+// 滑到引用上，左邊對應的脈絡亮起來
+document.addEventListener('mouseover', (e) => {
+  const q = e.target.closest?.('.q');
+  document.querySelectorAll('.ctx.hit').forEach((x) => x.classList.remove('hit'));
+  if (q) $(`ctx-${q.dataset.item}`)?.classList.add('hit');
+});
+
+$('form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const text = $('text').value.trim();
+  if (!text) return;
+  $('send').disabled = true;
+  $('err').textContent = '';
+  try {
+    const res = await fetch('/api/review', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ viewer, text, withStick: !$('nostick').checked }),
+    });
+    if (!res.ok) throw new Error((await res.json()).error);
+    $('text').value = '';
+  } catch (err) {
+    $('err').textContent = err.message;
+  }
+  $('send').disabled = false;
+  tick();
+});
+
+addEventListener('hashchange', () => {
+  viewer = decodeURIComponent(location.hash.slice(1)) || 'Erin';
+  tick();
+});
+
+tick();
+setInterval(tick, 1000);
+</script>
+</body>
+</html>

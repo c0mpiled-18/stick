@@ -1,17 +1,17 @@
 # Stick：共同開發計畫與狀態
 
 > **這一頁是全隊唯一的進度正本。** 做完一項就把 `[ ]` 改成 `[x]`、填上時間，推上來。卡住超過 10 分鐘就寫在最下面的「卡住」。
-> 最後更新：20:16（Felix）：A 段五項完成、已接上 B 的 db.js。前一筆：20:10（Felix）：分工填上人名、地基推上 main。前一筆 20:05（antonshuo）：場景改為公關審稿，見下方「19:50 改了什麼」；分工待 Felix 依新場景更新
+> 最後更新：21:02（Felix）：**鏡 2、鏡 3 在 Discord 上實測通過**（`speak.js shot2`、`shot3` → 機器人 4 秒回覆 → 網頁主管 3 條、專員 1 條加遮蔽提示）。只剩鏡 5 重審沒驗。前一筆：20:54（Felix）：**三段已併進 `main`**（A＋B＋C，34 個測試通過）。之後請從 `main` 開分支或直接拉 `main`。前一筆：20:47（ryan）：C 段的伺服器與網頁完成，在 `feat/agent`（已併入 `feat/access` 的 `review.js`），真模型走完一輪。前一筆：20:40（Felix）：`feat/ingest` 併入 `feat/access` 的 `review.js`，真模型走完審稿、遮蔽、重審；頻道改認三個正式頻道。前一筆：20:16（Felix）：A 段五項完成、已接上 B 的 db.js。前一筆：20:10（Felix）：分工填上人名、地基推上 main。前一筆 20:05（antonshuo）：場景改為公關審稿，見下方「19:50 改了什麼」；分工待 Felix 依新場景更新
 > 細節看 `docs/build-plan.md`（影片、資料格式、旁白）與 `docs/intent-map.md`（架構圖）。
 
 ## 現在在哪
 
 | | |
 |---|---|
-| 現在時間 | 20:05 |
+| 現在時間 | 21:02 |
 | 功能凍結 | **21:45**（之後只錄影與交件） |
 | 交件截止 | 22:45 |
-| 目前進度 | repo 建好、文件推上來、Discord 機器人設定完成。**作品程式還沒開始。** |
+| 目前進度 | `main` 上三段程式都在，34 個測試通過。**Discord → 機器人 → 脈絡 → 審稿 → 網頁，鏡 2、鏡 3 實測通過（21:00）。還沒驗：鏡 5（`speak.js shot5`，v2 過審後 C4 觸發重審）。** 錄影前要重設資料庫（裡面有 Felix 20:20 的測試訊息，會顯示成 Alice 在工程頻道講話）。 |
 | 下一個檢查點 | **21:00 三段接起來走一遍** |
 
 ## 19:50 改了什麼
@@ -118,7 +118,7 @@ SQLite 一個檔 `stick.db`，五張表，**只新增、不修改、不刪除**�
 - [x] 文件推上 `docs/`（19:37）
 - [x] 場景改為公關審稿，文件更新（19:50）
 - [ ] 兩位隊友接受邀請、抓下 repo、跑 `./.collab/setup.sh`
-- [x] 頻道：伺服器現有 `discussion`、`decision`，在 `config/channels.json` 對成 `eng-general`（internal）與 `eng-incident`（restricted）。`pr-drafts` 沒開，`!review` 在這兩個頻道都收（20:10）
+- [x] 頻道：20:38 起伺服器有 `eng-general`（internal）、`eng-incident`（restricted）、`pr-drafts`（交稿）三個正式頻道，`config/channels.json` 的別名已清空。**`discussion`、`decision`、`一般` 不再進脈絡**，C1、C4 的 webhook 要指到 `#eng-general`（20:40）
 - [x] `package.json`、`.env.example` 已在 `main`（20:10）。資料庫用 Node 內建的 `node:sqlite`，不用另外裝套件；`npm install` 後 `npm test` 跑測試。**三個人都不要再改 `package.json`，要加套件先講。**
 
 ### A：話怎麼進來
@@ -127,7 +127,7 @@ SQLite 一個檔 `stick.db`，五張表，**只新增、不修改、不刪除**�
 - [x] `src/ingest.js`：模型整理成脈絡，非逐字原話丟掉（20:07，真模型每則 1 到 2 秒）
 - [x] 等級＝`max(頻道下限, 模型判斷)`（測試守著）
 - [x] 寫完脈絡發 `context_added` 事件；`payload` 是 `{ context_item_ids, topics, message_id }`
-- [ ] `!review` 指令接到 C（機器人這邊寫好了，等 `review.js` 的 `reviewDraft` 與 `access.js` 的 `redactReviewFor`）
+- [x] `!review` 指令接到審稿（21:00 Discord 實測：Erin 用 webhook 交 v1 → 4 秒後機器人在 `#pr-drafts` 回 `block`，給 Erin 的版本只列日期那條，遮蔽的合併成一條）
 
 ### B：誰看得到什麼
 > **A、C 現在就能用**：`git merge origin/feat/access`（或 `git checkout origin/feat/access -- src/db.js src/access.js config/people.json scripts/`），再 `npm run seed`。多出來的讀取函式：`listMessages`、`getMessage`、`getDraft`、`listReviews(draftId)`；`insertDraft` 給 `parent_id` 會自動算 `revision`。測試用 `openStore(':memory:')`。
@@ -137,17 +137,24 @@ SQLite 一個檔 `stick.db`，五張表，**只新增、不修改、不刪除**�
 - [x] 測試：每個職位 × 每個等級，16 個全過（20:14）
 - [ ] `scripts/compare.js`：有無 Stick 各 5 次。**程式已寫好（20:16），等 C 的 `src/review.js` 合進來才能跑**：`node --env-file=.env scripts/compare.js`
 - [x] `scripts/leak-check.js`：Erin 視角限閱原話出現 0 次；故意標錯等級的審稿抓得到（20:16）。C 的伺服器好了加 `--url .../api/state?viewer=Erin` 一起掃
-- [x] demo 發言腳本 `scripts/speak.js`（20:25，在 `feat/access`）：`node --env-file=.env scripts/speak.js base`（C1–C3）、`C4`、`v1`；`--dry` 只印不送。**20:28 已用 webhook 實際送出測試訊息（HTTP 200）。** 目前只有 `DISCORD_WEBHOOK_ENG_INCIDENT`（C2、C3 可發；應建在 `decision`），C1、C4 還缺 `discussion` 的 webhook。seed 的事件格式已對齊 A：`{ context_item_ids, topics, message_id }`。
+- [x] demo 發言腳本 `scripts/speak.js`（20:25，在 `feat/access`）：`node --env-file=.env scripts/speak.js base`（C1–C3）、`C4`、`v1`；`--dry` 只印不送。**20:28 已用 webhook 實際送出測試訊息（HTTP 200）。** **20:45 三個 webhook 都實測送出（HTTP 200）**：Ben→`#eng-general`、Dana→`#eng-incident`、Erin→`#pr-drafts`。**Ben、Dana、Erin 全部用 webhook，不用真人帳號。** 一鍵劇本：`speak.js shot2`（C1–C3）、`shot3`（v1）、`shot5`（v2→等 25 秒→C4）、`demo`（全部，約 2 分鐘）。Erin 的 `!review` 由機器人接（`webhookSpeakers` 已含 Erin），交稿不進脈絡。seed 的事件格式已對齊 A：`{ context_item_ids, topics, message_id }`。
   - 設定：在 Discord 對要用的頻道「編輯頻道 → 整合 → Webhook → 新 Webhook → 複製網址」，放進自己的 `.env`（不進 repo、不貼聊天）：`DISCORD_WEBHOOK_ENG_GENERAL`、`DISCORD_WEBHOOK_ENG_INCIDENT`、選填 `DISCORD_WEBHOOK_PR_DRAFTS`。變數名照 demo 的頻道角色取，網址指到實際頻道就好（沿用 `一般`／`dev-process` 也可以）。
   - **給 Felix（A）**：webhook 訊息的 `author.bot` 是 true、`message.webhookId` 有值。機器人要把「有 `webhookId` 且名字在 `config/people.json` 別名裡」的訊息當成人的訊息，不能一律略過，否則 Dana 的話進不了脈絡。
 
 ### C：審稿與畫面
-- [ ] `src/review.js`：組脈絡包、審稿、引用逐字比對、問題等級
-- [ ] `src/server.js` 與網頁：切換身份、脈絡、稿件、審稿結果、點引用跳回原訊息
-- [ ] `onContextAdded`：主題相關的稿件重審
+- [x] `src/review.js`：組脈絡包、審稿、引用逐字比對、問題等級（**20:38 antonshuo 先做了，在 `feat/access`**；`reviewDraft`、`onContextAdded`、`startReReviewLoop`；假模型 8 個測試全過，**真模型還沒跑**：antonshuo 本機沒有 `ANTHROPIC_API_KEY`）。**ryan 不用再寫這支，專心做 `src/server.js` 與網頁**；給 Erin 的畫面記得先過 `redactReviewFor`
+- [x] `src/server.js` 與網頁：切換身份、脈絡、稿件、審稿結果、點引用跳回原訊息（20:46 ryan，分支 `feat/agent` `bf225dd`，已併入 `feat/access`）
+  - 執行：`npm run server`，開 `http://localhost:3000`（`#Erin`、`#Alice` 可直接指定身份）。要跟機器人用**同一個 `stick.db`**，所以 demo 時跟機器人跑在同一台電腦。
+  - `GET /api/state?viewer=<人名>`：脈絡走 `retrieveContext(viewer)`、審稿結果走 `redactReviewFor(viewer, review)`；不認得的人只拿得到 public。被遮蔽的問題合併成一條。
+  - `POST /api/review`：`{ viewer, text, withStick }`，網頁上的交稿框用它（`!review` 的備援）。勾「Before: review without Stick」就是鏡 1。
+  - **伺服器預設不重審**（照下面「卡住」20:40 的約定，由機器人觸發）。只用 seed、沒有機器人時：`STICK_REREVIEW=1 npm run server`。
+  - 新脈絡進來、還沒重審完的稿件，網頁會標「Needs re-review」（伺服器比對上次的脈絡包算的，只回稿件 id）。
+  - 20:46 真模型實測（seed 資料）：v1 無 Stick → `ok`；有 Stick → `block` 三條（C1、C2、C3）；切成 Erin 只看到日期那條加一條固定文字；v2 → `ok`；C4 後呼叫 `onContextAdded` → `needs_change`，引用 C4；`node scripts/leak-check.js --url "http://localhost:3000/api/state?viewer=Erin"` → 0 次。
+  - **還沒驗**：跟真的機器人（Discord 訊息）接在一起跑。
+- [x] `onContextAdded`：主題相關的稿件重審（在 `src/review.js`；伺服器或機器人呼叫 `startReReviewLoop()` 就會自動跑）
 
 ### 一起
-- [ ] 21:00 三段接通
+- [x] 21:00 三段接通：程式已合（20:54，`main`）；鏡 2、鏡 3 從 Discord 走到網頁實測通過（21:00）。機器人與伺服器（埠 3940）在 Felix 這台開著，機器人開到 22:30
 - [ ] 重審：第 2 版過審後，新訊息讓它被改判
 - [ ] 錄影（2 分鐘內）
 - [ ] README（英文）
@@ -179,11 +186,17 @@ SQLite 一個檔 `stick.db`，五張表，**只新增、不修改、不刪除**�
 | 事情 | 誰來確認 | 什麼時候 |
 |---|---|---|
 | 能不能開三個新頻道並讓機器人讀到；不行就用 `一般`＝`eng-general`、`dev-process`＝`eng-incident`、網頁交稿 | Felix | 20:05 前 |
-| 沒有 Stick 時，審稿 agent 真的會說稿子沒問題嗎 | C | `review.js` 一做好就跑 |
+| 沒有 Stick 時，審稿 agent 真的會說稿子沒問題嗎 | C | **會。** 20:35、20:44 各跑一次（兩版 `review.js` 各一次），v1 無 Stick 都是 `ok`、0 條問題。5 次的數字等 `scripts/compare.js` |
 | 影片裡四個發言者，哪幾個是真人帳號 | 三人當面 | 21:15 前 |
 
 ## 卡住
 
+- 21:08 antonshuo（經碩展同意）：改了 Felix 的 `src/bot.js` 三行回覆文字為英文（`(revision N)`、`No issues found.`、用法與未接上提示），只動字串。**Felix 要重啟機器人才會生效。**
+
+- 20:47 ryan：**`review.js` 撞工了，已照 20:38 的決定收斂。** 我 20:36 在 `feat/agent` 推了一版 `src/review.js`（`64cd469`），沒看到 antonshuo 20:38 也做了。現在 `feat/agent` 用的是 antonshuo 那版，我的留在歷史裡，合併時 `src/review.js` 不會衝突。兩版的差別，想採用的話當面講：(1) 我那版的結論由程式定（引用到 restricted → `block`，其餘 → `needs_change`），現行版採模型說的；(2) 現行版的 `issues[].quote` 只有一句，多個出處共用。另外提醒 Felix：`claude-sonnet-5-5` 不收強制的 `tool_choice`（`tool`／`any` 會回 400），現行版用 `output_config.format` 沒這個問題。
+- 20:47 ryan：我的 Discord 帳號名稱還沒給，拿到後請 antonshuo 加進 `config/people.json` 的 Erin `aliases`。
+
+- 20:40 Felix：**重審只能有一個人觸發。** 機器人整理出新脈絡後會直接呼叫 `onContextAdded`（事件要包成 `{ payload: { context_item_ids } }`，傳在頂層會被當成沒有新脈絡，已修）。`src/server.js` **不要**再開 `startReReviewLoop()`，否則同一條新脈絡會重審兩次。
 - 20:25 Felix：`config/people.json` 我在 `feat/ingest` 加了兩個別名（`felix425.` → Alice、`shuozhan`／`碩展` → Ben），只動那兩行。**antonshuo 合併時留意這個檔**。ryan 的 Discord 帳號還不知道（他沒在伺服器發過言），要當 Erin 的話把帳號名稱加進 Erin 的 `aliases`；不加就用 `scripts/speak.js` 的 webhook 扮 Erin。
 
 - 20:15 Felix：分支 `feat/control`（20:07 推的 `authority.js`、`audit.js`）是照舊場景寫的，新場景用不到。確認後請刪掉或標明不合併，免得 21:00 合錯。

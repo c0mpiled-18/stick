@@ -21,12 +21,21 @@ const args = process.argv.slice(2);
 const dry = args.includes('--dry');
 const gi = args.indexOf('--gap');
 const gapSec = gi >= 0 ? Number(args[gi + 1]) : 3;
+// 一鍵劇本：wait:N 代表停 N 秒（等機器人整理脈絡、審稿）
+export const PRESETS = {
+  base: ['C1', 'C2', 'C3'],
+  shot2: ['C1', 'C2', 'C3'], // 鏡 2：三則工程／法務對話
+  shot3: ['v1'], // 鏡 3：Erin 交 v1
+  shot5: ['v2', 'wait:25', 'C4'], // 鏡 5：Erin 交 v2（過審）→ Ben 說又延一週（觸發重審）
+  demo: ['C1', 'C2', 'C3', 'wait:15', 'v1', 'wait:40', 'v2', 'wait:40', 'C4'], // 全部自動跑完
+};
+
 const keys = args
   .filter((a, i) => !a.startsWith('--') && args[i - 1] !== '--gap')
-  .flatMap((a) => (a === 'base' ? ['C1', 'C2', 'C3'] : [a]));
+  .flatMap((a) => PRESETS[a] ?? [a]);
 
 if (keys.length === 0) {
-  console.error('usage: node --env-file=.env scripts/speak.js <C1|C2|C3|C4|v1|v2|base> ... [--dry] [--gap 3]');
+  console.error(`usage: node --env-file=.env scripts/speak.js <C1|C2|C3|C4|v1|v2|wait:N|${Object.keys(PRESETS).join('|')}> ... [--dry] [--gap 3]`);
   process.exit(2);
 }
 
@@ -34,6 +43,8 @@ if (keys.length === 0) {
 export const envNameFor = (channel) => `DISCORD_WEBHOOK_${channel.toUpperCase().replace(/[^A-Z0-9]/g, '_')}`;
 
 function planFor(key) {
+  const w = /^wait:(\d+)$/.exec(key);
+  if (w) return { key, wait: Number(w[1]) };
   if (MESSAGES[key]) {
     const m = MESSAGES[key];
     return { key, channel: m.channel, username: m.author, content: m.text };
@@ -48,14 +59,20 @@ function planFor(key) {
 const plans = keys.map(planFor);
 
 // 先檢查所有需要的 webhook 都設好，避免發到一半才失敗
-const missing = [...new Set(plans.map((p) => envNameFor(p.channel)))].filter((n) => !process.env[n]);
+const missing = [...new Set(plans.filter((p) => p.channel).map((p) => envNameFor(p.channel)))].filter((n) => !process.env[n]);
 if (missing.length && !dry) {
   console.error(`missing in .env: ${missing.join(', ')}`);
   process.exit(2);
 }
 
+const sleep = (s) => new Promise((r) => setTimeout(r, s * 1000));
 for (const [i, p] of plans.entries()) {
-  if (i > 0 && !dry) await new Promise((r) => setTimeout(r, gapSec * 1000));
+  if (p.wait != null) {
+    console.log(`${dry ? '[dry] ' : ''}wait ${p.wait}s`);
+    if (!dry) await sleep(p.wait);
+    continue;
+  }
+  if (i > 0 && !dry && plans[i - 1].wait == null) await sleep(gapSec);
   const label = `${p.key}  #${p.channel}  ${p.username}: ${p.content}`;
   if (dry) {
     console.log(`[dry] ${label}`);

@@ -1,0 +1,23 @@
+{
+  "_note": "頻道 → 敏感等級下限。20:38 起伺服器已有 eng-general、eng-incident、pr-drafts 三個正式頻道，別名清空：discussion／decision／一般是隊內協作頻道，不進脈絡。",
+  "channels": {
+    "eng-general": {
+      "floor": "internal",
+      "ingest": true
+    },
+    "eng-incident": {
+      "floor": "restricted",
+      "ingest": true
+    },
+    "pr-drafts": {
+      "ingest": false,
+      "review": true
+    }
+  },
+  "aliases": {},
+  "webhookSpeakers": [
+    "Dana",
+    "Ben",
+    "Erin"
+  ]
+}

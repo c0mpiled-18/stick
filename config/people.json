@@ -2,8 +2,8 @@
   "_note": "誰是哪個職位、主管是誰、看得到哪幾級。aliases 填 Discord 帳號名稱或 webhook 名稱（A 的機器人用來對照）。demo 人物全部虛構。",
   "people": {
     "Erin":  { "role": "pr_staff",    "manager": "Alice", "aliases": ["Erin"] },
-    "Alice": { "role": "pr_lead",     "manager": null,    "aliases": ["Alice"] },
-    "Ben":   { "role": "engineering", "manager": null,    "aliases": ["Ben"] },
+    "Alice": { "role": "pr_lead",     "manager": null,    "aliases": ["Alice", "felix425."] },
+    "Ben":   { "role": "engineering", "manager": null,    "aliases": ["Ben", "shuozhan", "碩展"] },
     "Dana":  { "role": "legal",       "manager": null,    "aliases": ["Dana"] }
   },
   "clearance": {

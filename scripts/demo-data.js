@@ -30,7 +30,7 @@ export function addConversation(store, key) {
   const m = MESSAGES[key];
   const messageId = store.insertMessage({ source: 'discord', ...m, url: `https://discord.com/channels/demo/${m.channel}/${key}` });
   const itemId = store.insertContextItem({ ...CONTEXT[key], source_message_id: messageId });
-  store.insertEvent({ type: 'context_added', payload: { item_id: itemId, topics: CONTEXT[key].topics } });
+  store.insertEvent({ type: 'context_added', payload: { context_item_ids: [itemId], topics: CONTEXT[key].topics, message_id: messageId } }); // 與 A 的 ingest.js 同格式
   return { messageId, itemId };
 }
 

@@ -28,14 +28,14 @@
 - 想知道隊友做到哪，問自己的 agent（它會跑 `collab team`），或直接看 STATUS。
 
 ### 2. 各自的分支、各自的檔案
-- Felix：`feat/ingest`。隊友：`feat/agent`。檔案歸屬寫在 STATUS 的分工表。
+- Felix：`feat/memory`（記憶與脈絡）。antonshuo：`feat/control`（權限與查核）。ryan：`feat/web`（網頁與交件）。檔案歸屬寫在 STATUS 的分工表。
 - **不改別人的檔案。** 需要對方改，就用 `collab ask` 開一張請求，或當面講。
-- **20:50 合併一次**，之前不互相合。合併後小步推到 `main`。
+- **21:00 合併一次**，之前不互相合。合併後小步推到 `main`。
 - 只有 `docs/` 可以直接推 `main`。
 
 ### 3. 交界講定就不改
 - 四張表的欄位與兩邊互相呼叫的函式寫在 STATUS 的「交界」。
-- 19:55 之後要改交界，先當面講好，再用 `collab decide` 記成一張決策，兩邊同時改。
+- 20:10 之後要改交界，先當面講好，再用 `collab decide` 記成一張決策，兩邊同時改。
 
 ### 4. 當面講定的事要記下來
 - 當面討論完，叫自己的 agent 記成決策：`.collab/bin/collab decide "標題" <<< "內容"`

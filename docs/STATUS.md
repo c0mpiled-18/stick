@@ -135,8 +135,8 @@ SQLite 一個檔 `stick.db`，五張表，**只新增、不修改、不刪除**�
 - [x] `config/people.json` 與 `scripts/seed.js`：`npm run seed`、`--v2`、`--c4`、`--reset`（20:14）
 - [x] `src/access.js`：讀取口、主管對照、遮蔽；另有 `sensitivityOfItems(ids)` 給 C 標問題等級（20:14）
 - [x] 測試：每個職位 × 每個等級，16 個全過（20:14）
-- [ ] `scripts/compare.js`：有無 Stick 各 5 次
-- [ ] `scripts/leak-check.js`：Erin 視角限閱原話出現 0 次
+- [ ] `scripts/compare.js`：有無 Stick 各 5 次。**程式已寫好（20:16），等 C 的 `src/review.js` 合進來才能跑**：`node --env-file=.env scripts/compare.js`
+- [x] `scripts/leak-check.js`：Erin 視角限閱原話出現 0 次；故意標錯等級的審稿抓得到（20:16）。C 的伺服器好了加 `--url .../api/state?viewer=Erin` 一起掃
 - [ ] demo 發言腳本（webhook 扮 Dana）
 
 ### C：審稿與畫面

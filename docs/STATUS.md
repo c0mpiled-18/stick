@@ -1,7 +1,7 @@
 # Stick：共同開發計畫與狀態
 
 > **這一頁是全隊唯一的進度正本。** 做完一項就把 `[ ]` 改成 `[x]`、填上時間，推上來。卡住超過 10 分鐘就寫在最下面的「卡住」。
-> 最後更新：19:45（Felix 這邊）
+> 最後更新：19:52（Felix 這邊）：補上四層的分工與介面
 > 細節看 `docs/build-plan.md`（影片、資料格式、旁白）與 `docs/intent-map.md`（架構圖）。
 
 ## 現在在哪
@@ -47,6 +47,27 @@ Stick 掛在團隊的 Discord 後面：誰講的、在哪個頻道講的，決�
 | 21:45–22:15 | 錄影 | README |
 | 22:15–22:45 | 上傳影片、repo 改公開、交件 | 同左 |
 
+## 四層：各自一個檔案，各自能單獨測
+
+產品就是這四層。每一層是一個檔案、一組純函式，**不互相呼叫內部、只透過下面的輸入輸出往來**。影片也是照這四層演的。
+
+| 層 | 回答什麼問題 | 檔案 | 輸入 → 輸出 | 誰寫 | 影片哪一鏡 |
+|---|---|---|---|---|---|
+| **記憶層** | 發生過什麼 | `src/db.js` | 四張只增不改的表 | Felix | 鏡 2 |
+| **權限層** | 這句話算不算數、誰說了算 | `src/authority.js` | `{誰的角色, 哪個頻道, 做了什麼}` → `{結果狀態}` | Felix | 鏡 2 |
+| **脈絡層** | 這一次 agent 到底看到了什麼 | `src/context.js` | `{決定表, 文件種類, 要不要用 Stick}` → `脈絡包` | 後半 | 鏡 3 |
+| **查核層** | 有沒有照做、根據哪一條 | `src/audit.js` | `{產出, 脈絡包, 事實表}` → `{判定, 違反了哪條, 依據連到哪則訊息}` | 後半 | 鏡 4、6 |
+
+三條分層的規矩：
+
+1. **權限層不呼叫模型。** 它是一張表加一個函式，同樣的輸入永遠得到同樣的結果。模型只在 `extract.js` 挑出逐字片段，狀態由權限層決定。
+2. **脈絡層不呼叫模型，也不寫資料庫。** 它只讀決定表、組出一包。存檔由呼叫它的人做。
+3. **查核層不相信模型的自述，也不由寫文件的那支程式兼做。** `draft.js` 只負責叫模型寫；寫完把產出交給 `audit.js` 判定。兩者分開，才能說「不是模型自己說了算」。
+
+`src/draft.js` 是把這幾層串起來的地方：拿脈絡包（脈絡層）→ 叫模型寫 → 交給查核層判定 → 存進記憶層。它本身不含任何判斷規則。
+
+**這裡的「權限」指的是決策權**：誰能讓一句話變成定案或已確認。今晚不做「誰能看到哪些內容」的存取權限，所有成員看到的脈絡相同。被問到要這樣回答，不要說成有做存取控管。
+
 ## 交界：19:55 前講定，之後誰都不改
 
 SQLite 一個檔 `stick.db`，四張表，**只新增、不修改、不刪除**。
@@ -76,7 +97,13 @@ SQLite 一個檔 `stick.db`，四張表，**只新增、不修改、不刪除**�
 
 後半提供給前半的函式（在 `src/draft.js`）：
 
-- `draft({ doc, requestedBy, withStick })`：回傳 `{ text, citedDecisions, usedFactIds, verdict, question }`。機器人收到 `!draft update` 或 `!draft handoff` 就呼叫它。
+- `buildContext({ decisions, doc, withStick })`（`src/context.js`）：回傳脈絡包 `{ mustFollow, unconfirmed, needsRecheck, excluded, tokens, hash }`
+- `judge({ output, packet, facts })`（`src/audit.js`）：回傳 `{ verdict, violations, trace }`
+- `draft({ doc, requestedBy, withStick })`（`src/draft.js`）：串起上面兩個，回傳 `{ text, citedDecisions, usedFactIds, verdict, question }`。機器人收到 `!draft update` 或 `!draft handoff` 就呼叫它。
+
+前半另外提供（`src/authority.js`）：
+
+- `decide({ role, channel, action })`：回傳 `{ status }` 或 `null`（沒有權限，不改狀態）
 
 模型：挑出決定用 `claude-haiku-5-5`，寫文件用 `claude-sonnet-5-5`。金鑰各自放自己電腦的 `.env`，**不進 repo**。
 

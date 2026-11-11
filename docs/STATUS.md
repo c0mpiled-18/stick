@@ -142,9 +142,9 @@ SQLite 一個檔 `stick.db`，五張表，**只新增、不修改、不刪除**�
   - **給 Felix（A）**：webhook 訊息的 `author.bot` 是 true、`message.webhookId` 有值。機器人要把「有 `webhookId` 且名字在 `config/people.json` 別名裡」的訊息當成人的訊息，不能一律略過，否則 Dana 的話進不了脈絡。
 
 ### C：審稿與畫面
-- [ ] `src/review.js`：組脈絡包、審稿、引用逐字比對、問題等級
+- [x] `src/review.js`：組脈絡包、審稿、引用逐字比對、問題等級（**20:38 antonshuo 先做了，在 `feat/access`**；`reviewDraft`、`onContextAdded`、`startReReviewLoop`；假模型 8 個測試全過，**真模型還沒跑**：antonshuo 本機沒有 `ANTHROPIC_API_KEY`）。**ryan 不用再寫這支，專心做 `src/server.js` 與網頁**；給 Erin 的畫面記得先過 `redactReviewFor`
 - [ ] `src/server.js` 與網頁：切換身份、脈絡、稿件、審稿結果、點引用跳回原訊息
-- [ ] `onContextAdded`：主題相關的稿件重審
+- [x] `onContextAdded`：主題相關的稿件重審（在 `src/review.js`；伺服器或機器人呼叫 `startReReviewLoop()` 就會自動跑）
 
 ### 一起
 - [ ] 21:00 三段接通

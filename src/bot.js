@@ -47,7 +47,7 @@ client.on(Events.MessageCreate, async (raw) => {
     const ids = await ingestMessage(msg, { db });
     if (ids.length) {
       console.log(`[ctx] 新增 ${ids.length} 條脈絡：${ids.join(', ')}`);
-      const redo = (await review?.onContextAdded?.({ type: 'context_added', context_item_ids: ids })) ?? [];
+      const redo = (await review?.onContextAdded?.({ type: 'context_added', payload: { context_item_ids: ids } })) ?? [];
       if (redo.length) console.log(`[review] 重審稿件：${redo.join(', ')}`);
     }
   } catch (e) {

@@ -1,0 +1,14 @@
+{
+  "_note": "demo 事實表，全部虛構。來源：docs/build-plan.md 第 6 節（commit 1754cbd 版）。status：confirmed＝可當事實；unconfirmed／unapproved＝不可對客戶講，除非 unlockedBy 裡的決定生效。",
+  "facts": [
+    { "id": "F1", "text": "Since 14:02, about 40% of Halden's API requests return 500.", "status": "confirmed", "source": "monitoring" },
+    { "id": "F2", "text": "Halden is our largest enterprise customer; the contract includes 99.9% availability.", "status": "confirmed", "source": "contract" },
+    { "id": "F3", "text": "The cause may be the rate limiter config deployed at 14:00.", "status": "unconfirmed", "source": "Ben's guess", "unlockedBy": ["D2"] },
+    { "id": "F4", "text": "It can probably be fixed in about thirty minutes.", "status": "unconfirmed", "source": "Ben's guess", "unlockedBy": [] },
+    { "id": "F5", "text": "Compensation: 10% credit on this month's bill.", "status": "unapproved", "source": "Dana's proposal", "unlockedBy": ["D3"] }
+  ],
+  "guards": {
+    "_note": "某個決定生效時，客戶更新裡不可出現的字（不分大小寫）。D3 取代 D1 後，這些字就解禁。",
+    "D1": ["thirty minutes", "30 minutes", "fixed", "resolved", "10%", "ten percent", "credit"]
+  }
+}

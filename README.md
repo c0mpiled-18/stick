@@ -1,72 +1,80 @@
 # Stick
 
-> Plug-and-use shared memory for teams of people and agents.
-> Built at c0mpiled-18, 2026-11-11, 18:45–22:45. 開發中，交件前這一頁會換成英文的作品說明。
+> A multiplayer AI platform that keeps teams aligned with the latest organizational context.
+>
+> Built at the c0mpiled-18 hackathon on 2026-11-11 (theme: Multiplayer AI).
 
-工程頻道剛討論出延期與資安事件，公關專員不知道，新聞稿寫得跟現況衝突。Stick 讀團隊的 Slack／Discord，把對話整理成帶敏感等級的脈絡；專員交稿時，公關主管的審稿 agent 用主管的權限比對最新討論，指出要改哪裡、依據是哪一句話，給專員的版本會遮蔽他無權看的內容。新討論進來，已過審的稿子會自動重審。
+## The problem
 
-## 先看這三份
+Engineering decides in a channel: no security announcements before Friday. PR never sees that message, and a press release is already scheduled for tomorrow. Nobody was careless. The teams simply do not share the same context, and the people who do have it are not allowed to forward all of it.
 
-| 檔案 | 看什麼 |
-|---|---|
-| [`docs/STATUS.md`](docs/STATUS.md) | **進度正本**：分工、時間表、資料格式、勾選清單 |
-| [`docs/build-plan.md`](docs/build-plan.md) | 影片六鏡、每一步怎麼算做完、旁白、評審問答 |
-| [`docs/intent-map.md`](docs/intent-map.md) | 為什麼做、架構圖 |
+## What Stick does
 
-## 加入（三步）
+Stick plugs into the chat tool a team already uses (Discord in this build) and adds three layers:
 
-1. 接受 `c0mpiled-18` 的 GitHub 邀請。
-2. `gh api user --jq .login` 確認是接受邀請的那個帳號。
-3. `gh repo clone c0mpiled-18/stick && cd stick && ./.collab/setup.sh`，然後在這個資料夾執行 `claude`。
+| Layer | What it does | Code |
+|---|---|---|
+| **Context** | Turns channel messages into short, continuously updated context items. Each item keeps a summary, a topic, a sensitivity level and the exact quote it came from. The model can raise a sensitivity level above the channel's floor, never lower it. | `src/ingest.js` |
+| **Permission** | Decides what each viewer may see, based on their role and clearance. Plain code, no model call, so it cannot be talked into leaking. | `src/access.js` |
+| **Review** | A supervisory agent reviews a team member's draft against the latest context, using the supervisor's clearance. It says what must change and which message is the evidence. | `src/review.js` |
 
-跑 `setup.sh` 前先看一眼它與 `.claude/settings.json`：它會在你的電腦裝 hook。開發工具的完整說明在 [`docs/hackathon-kit.md`](docs/hackathon-kit.md)。
+Two things follow from combining them:
 
-## 合作規則
+- **One review, two views.** The lead sees every issue with its source quote. A staff member sees the issues they are cleared for, plus one redacted line saying that something above their clearance also blocks the draft. They learn that they must wait, without learning the secret.
+- **Reviews do not go stale.** When new context arrives, drafts that were already approved are reviewed again automatically.
 
-### 1. 進度只有一個正本
-- `docs/STATUS.md` 是唯一的進度表。做完一項就勾起來、寫上時間、推上去。
-- 想知道隊友做到哪，問自己的 agent（它會跑 `collab team`），或直接看 STATUS。
+## Demo scenario
 
-### 2. 各自的分支、各自的檔案
-- Felix：`feat/memory`。antonshuo：`feat/control`。ryan：`feat/web`。各自負責哪些檔案寫在 STATUS 的分工表（新場景版待 Felix 更新）。
-- **不改別人的檔案。** 需要對方改，就用 `collab ask` 開一張請求，或當面講。
-- **21:00 合併一次**，之前不互相合。合併後小步推到 `main`。
-- 只有 `docs/` 可以直接推 `main`。
+All companies and people are fictional. Kestrel is about to announce a feature called Smart Export.
 
-### 3. 交界講定就不改
-- 五張表的欄位與三段互相呼叫的函式寫在 STATUS 的「交界」。
-- 20:10 之後要改交界，先當面講好，再用 `collab decide` 記成一張決策，三個人同時改。
+1. Ben (engineering) and Dana (legal) discuss a launch delay in `#eng-general` and a security incident in `#eng-incident`.
+2. Erin (PR staff) posts her press release draft in `#pr-drafts`. She was in neither conversation.
+3. Without Stick, an AI reviewer approves the draft. With Stick, the review blocks it and cites the engineering messages.
+4. Alice (PR lead) sees all issues. Erin sees the ones she is cleared for and one redacted line.
+5. Erin fixes the draft and it passes. Then a new message lands in engineering, and Stick re-reviews the approved draft and flags it again.
 
-### 4. 當面講定的事要記下來
-- 當面討論完，叫自己的 agent 記成決策：`.collab/bin/collab decide "標題" <<< "內容"`
-- 沒記下來的決定，另一個人的 agent 不會知道。這正是我們在做的產品要解決的問題。
+## Run it
 
-### 5. 金鑰不進 repo
-- 模型金鑰與 Discord token 只放自己電腦的 `.env`。`.env` 已列在 `.gitignore`。
-- 不在 Discord、issue、commit 訊息裡貼金鑰。貼錯了立刻講，馬上重發一組。
+Requires Node.js 22.5 or later, an Anthropic API key, and a Discord bot token for the bot.
 
-### 6. 每一步先定「怎麼算做完」
-- 動手前先寫下這一步的驗收方式（STATUS 與 build-plan 都有）。跑過才算完成。
-- 測試有紅的不合併。
+```bash
+npm install
+cp .env.example .env        # fill in ANTHROPIC_API_KEY and DISCORD_BOT_TOKEN
+npm run seed                # load the demo scenario into a local SQLite file
+npm run server              # web view at http://localhost:3000
+npm run bot                 # optional: live ingest and review from Discord
+npm test
+```
 
-### 7. 卡住就講
-- 同一個問題修兩次不過，停手，在 STATUS 的「卡住」寫下卡在哪、試過什麼。
-- 超過 10 分鐘沒進展就找對方，不要自己悶著修。
+- The web view lets you switch viewer (Erin, Alice, Ben, Dana) and compare a review with and without Stick.
+- `config/channels.json` maps each channel to a sensitivity floor and marks which channel holds drafts to review.
+- `node scripts/leak-check.js` checks that no restricted text reaches a viewer who is not cleared for it.
 
-### 8. 主辦的規定
-- 作品程式全部在今晚 18:45 之後寫。不要從舊專案貼程式進來。
-- `.collab/`、`.claude/`、`organizer/` 是開發工具，不是作品。
-- demo 裡的公司與人物都是虛構的，不放任何真實公司的資料。
-
-### 9. 21:45 功能凍結
-- 之後只修會讓 demo 壞掉的問題，不加新功能。
-- 來不及時先放掉什麼，順序寫在 STATUS。
-
-## 常用指令
+## Layout
 
 ```
-.collab/bin/collab team                         # 每個人的狀態與最新 commit
-.collab/bin/collab status <<< "現在在做什麼"      # 更新自己的狀態
-.collab/bin/collab ask <帳號> "標題" <<< "內容"   # 請隊友幫忙
-.collab/bin/collab decide "標題" <<< "內容"       # 記下一個共同決定
+src/bot.js        Discord bot: listens, ingests, replies with the review
+src/ingest.js     Context layer
+src/access.js     Permission layer
+src/review.js     Review layer and re-review on new context
+src/server.js     Web API and static page
+src/db.js         SQLite schema and helpers
+public/           Web view
+scripts/          Seed data, demo message sender, leak check
+test/             Unit tests
+docs/             Build notes written during the hackathon (mostly Chinese)
 ```
+
+`.collab/`, `.claude/` and `organizer/` are team tooling used during the build. They are not part of the product.
+
+## Limits of this build
+
+- Discord only. Slack is the next connector and is not implemented.
+- Roles and clearances come from a seed file, not from an identity provider.
+- Built in four hours. The code has tests but has not been through a full review pass.
+
+## Team
+
+- Felix Lai: Discord bot, ingest, context layer
+- 許碩展 (antonshuo): database, permission layer, review layer, demo scripts
+- ryan234r32: web server and web view

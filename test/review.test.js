@@ -259,3 +259,14 @@ test('重審：主題不相關的不審；已擋下的不審；只用無 Stick �
   assert.deepEqual(await c.reviewer.onContextAdded({ payload: {} }), []);
   assert.deepEqual(await c.reviewer.onContextAdded(null), []);
 });
+
+test('staleDraftIds：新脈絡進來到重審完成之間，稿件被標成需重審', async () => {
+  const ctx = setup({ model: v2Answer });
+  const { v2 } = seedV2(ctx);
+  await ctx.reviewer.reviewDraft({ draftId: v2 });
+  assert.deepEqual(await ctx.reviewer.staleDraftIds(), []);
+  const c4 = ctx.add('C4');
+  assert.deepEqual(await ctx.reviewer.staleDraftIds(), [v2]);
+  await ctx.reviewer.onContextAdded({ context_item_ids: [c4] });
+  assert.deepEqual(await ctx.reviewer.staleDraftIds(), []);
+});

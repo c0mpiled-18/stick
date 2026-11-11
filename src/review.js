@@ -3,6 +3,7 @@
 //
 //   reviewDraft({ draftId, trigger, withStick }) → 審稿列（已存進 reviews）
 //   onContextAdded(event)                        → 被重審的稿件 id 陣列
+//   staleDraftIds()                              → 有新脈絡還沒重審的稿件 id（網頁標記用）
 //
 // 規矩：
 // 1. 脈絡只從 access.js 的 retrieveContext 拿，用「稿件作者的主管」的權限。
@@ -82,6 +83,8 @@ function buildPrompt({ draft, packet }) {
     'One issue per conflict. For each issue, list every context item it relies on, and for each one copy an exact substring of its quote.',
     'Do not use information from a context item in an issue unless you list that item in the issue.',
     'Do not report style or wording preferences. If nothing conflicts, return no issues.',
+    '',
+    `Answer only by calling the ${TOOL.name} tool, exactly once.`,
   ].join('\n');
 }
 
@@ -98,7 +101,8 @@ export async function reviewWithClaude({ draft, packet }) {
       model: MODEL,
       max_tokens: 1500,
       tools: [TOOL],
-      tool_choice: { type: 'tool', name: TOOL.name },
+      // 這個模型不收強制指定工具（tool_choice: tool／any），所以用 auto 加上提示要求一定要呼叫
+      tool_choice: { type: 'auto' },
       messages: [{ role: 'user', content: buildPrompt({ draft, packet }) }],
     }),
     signal: AbortSignal.timeout(60_000),
@@ -106,7 +110,9 @@ export async function reviewWithClaude({ draft, packet }) {
   if (!res.ok) throw new Error(`Claude ${res.status}: ${(await res.text()).slice(0, 200)}`);
   const body = await res.json();
   const block = body.content?.find((b) => b.type === 'tool_use');
-  return block?.input ?? { draft_topics: [], issues: [] };
+  // 沒呼叫工具就當成失敗，不當成「沒問題」：寧可審稿失敗，也不要放行沒審過的稿子
+  if (!block?.input) throw new Error(`Claude did not call ${TOOL.name} (stop_reason: ${body.stop_reason})`);
+  return block.input;
 }
 
 // 只把彎引號換成直引號（長度不變），其餘一字不差
@@ -217,9 +223,42 @@ export function createReviewer({ store = defaultDb, access = defaultAccess, mode
   }
 
   /**
+   * 每份稿件的最新版裡，哪些「上次審完之後又有主管看得到的新脈絡」。
+   * 沒用 Stick 審過、或已經擋下的不算。
+   * @returns {Promise<{draft: object, last: object, fresh: object[]}[]>} fresh＝上次沒帶到的脈絡
+   */
+  async function staleDrafts() {
+    const drafts = await store.listDrafts();
+    const hasChild = new Set(drafts.map((d) => d.parent_id).filter((x) => x != null));
+    const out = [];
+    for (const draft of drafts) {
+      if (hasChild.has(draft.id)) continue; // 只看每份稿件的最新版
+      const last = (await store.listReviews(draft.id)).filter((r) => r.with_stick).at(-1);
+      if (!last || last.verdict === 'block') continue;
+      const seen = new Set((last.context_packet?.items ?? []).map((i) => Number(i.id)));
+      const fresh = access.retrieveContext(last.reviewer).items.filter((i) => !seen.has(Number(i.id)));
+      if (fresh.length) out.push({ draft, last, fresh });
+    }
+    return out;
+  }
+
+  // 主題要有交集；任何一邊不知道主題就當成相關
+  const related = (last, topics) => {
+    const draftTopics = last.context_packet?.draft_topics ?? [];
+    return topics.length === 0 || draftTopics.length === 0 || draftTopics.some((t) => topics.includes(t));
+  };
+
+  /** 需要重審的稿件 id（給網頁標「需重審」用，不含任何脈絡內容）。 */
+  async function staleDraftIds() {
+    return (await staleDrafts())
+      .filter(({ last, fresh }) => related(last, fresh.flatMap((i) => i.topics ?? [])))
+      .map(({ draft }) => draft.id);
+  }
+
+  /**
    * 新脈絡進來：找主題相關、最新結論是 ok 或 needs_change 的最新版稿件，重審。
    * event 可以是 events 表的一列（payload 裡有 context_item_ids、topics），
-   * 也可以是機器人直接給的 { context_item_ids }。
+   * 也可以是機器人直接給的 { context_item_ids }。同一條脈絡審過就不再審。
    * @returns {Promise<number[]>} 被重審的稿件 id
    */
   async function onContextAdded(event) {
@@ -227,25 +266,12 @@ export function createReviewer({ store = defaultDb, access = defaultAccess, mode
     const newIds = (p.context_item_ids ?? (p.item_id != null ? [p.item_id] : [])).map(Number);
     if (newIds.length === 0) return [];
 
-    const drafts = await store.listDrafts();
-    const hasChild = new Set(drafts.map((d) => d.parent_id).filter((x) => x != null));
     const redone = [];
-
-    for (const draft of drafts) {
-      if (hasChild.has(draft.id)) continue; // 只看每份稿件的最新版
-      const last = (await store.listReviews(draft.id)).filter((r) => r.with_stick).at(-1);
-      if (!last || last.verdict === 'block') continue; // 沒用 Stick 審過，或已經擋下
-
-      // 這條新脈絡主管看不看得到、上次有沒有帶過
-      const visible = access.retrieveContext(last.reviewer).items.filter((i) => newIds.includes(Number(i.id)));
-      if (visible.length === 0) continue;
-      const seen = new Set((last.context_packet?.items ?? []).map((i) => Number(i.id)));
-      if (visible.every((i) => seen.has(Number(i.id)))) continue; // 已經審過了
-
-      // 主題要有交集；任何一邊不知道主題就照審
-      const newTopics = new Set(p.topics?.length ? p.topics : visible.flatMap((i) => i.topics ?? []));
-      const draftTopics = last.context_packet?.draft_topics ?? [];
-      if (newTopics.size > 0 && draftTopics.length > 0 && !draftTopics.some((t) => newTopics.has(t))) continue;
+    for (const { draft, last, fresh } of await staleDrafts()) {
+      const added = fresh.filter((i) => newIds.includes(Number(i.id)));
+      if (added.length === 0) continue; // 主管看不到這條，或上次已經帶過
+      const topics = p.topics?.length ? p.topics : added.flatMap((i) => i.topics ?? []);
+      if (!related(last, topics)) continue;
 
       if (inFlight.has(draft.id)) continue;
       inFlight.add(draft.id);
@@ -259,7 +285,7 @@ export function createReviewer({ store = defaultDb, access = defaultAccess, mode
     return redone;
   }
 
-  return { reviewDraft, onContextAdded, buildPacket, checkIssues };
+  return { reviewDraft, onContextAdded, staleDraftIds, buildPacket, checkIssues };
 }
 
 // ---- 預設：用 src/db.js 的預設資料庫、src/access.js 與真的模型 ----
@@ -268,3 +294,5 @@ const r = () => (reviewer ??= createReviewer());
 
 export const reviewDraft = (opts) => r().reviewDraft(opts);
 export const onContextAdded = (event) => r().onContextAdded(event);
+/** 需要重審的稿件 id；src/server.js 用來標「需重審」與輪詢重審。 */
+export const staleDraftIds = () => r().staleDraftIds();

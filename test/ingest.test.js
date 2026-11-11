@@ -65,7 +65,7 @@ test('閒聊沒有脈絡時不發事件', async () => {
 
 const cfg = {
   channels: { channels: { 'eng-general': { floor: 'internal', ingest: true } }, aliases: { '一般': 'eng-general' }, webhookSpeakers: ['Dana'] },
-  people: { Dana: { name: 'Dana', role: 'legal' } },
+  people: { people: { Dana: { role: 'legal', aliases: ['Dana'] }, Alice: { role: 'pr_lead', aliases: ['Alice'] }, Ben: { role: 'engineering', aliases: ['shuozhan'] } } },
 };
 const dm = (over = {}) => ({ author: { id: 'u1', username: 'ben', bot: false }, channel: { name: '一般' }, guild: { ownerId: 'owner' },
   content: 'hello', url: 'https://discord.test/2', createdTimestamp: 0, ...over });
@@ -83,5 +83,13 @@ test('機器人自己與沒登記的 webhook 不處理；登記過的 webhook �
 });
 
 test('伺服器擁有者預設是公關主管', () => {
-  assert.equal(normalize(dm({ author: { id: 'owner', username: 'alice', bot: false } }), cfg, 'self').role, 'pr_lead');
+  const m = normalize(dm({ author: { id: 'owner', username: 'felix425.', bot: false } }), cfg, 'self');
+  assert.equal(m.role, 'pr_lead');
+  assert.equal(m.author, 'Alice'); // 用人員表裡的名字，審稿才找得到主管
+});
+
+test('Discord 帳號用 aliases 對到 demo 人物（不分大小寫）', () => {
+  const m = normalize(dm({ author: { id: 'u9', username: 'ShuoZhan', bot: false } }), cfg, 'self');
+  assert.equal(m.author, 'Ben');
+  assert.equal(m.role, 'engineering');
 });

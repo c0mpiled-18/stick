@@ -16,11 +16,24 @@ export function resolveChannel(name, cfg) {
   return rule ? { name: key, ...rule } : null;
 }
 
-/** 這個人是誰：先比 Discord 帳號 id，再比使用者名稱（webhook 用名稱）。 */
-export function resolvePerson({ authorId, authorName, isOwner }, cfg) {
-  const p = cfg.people[authorId] ?? cfg.people[authorName];
-  if (p) return { user: p.name ?? authorName, role: p.role };
-  if (isOwner) return { user: authorName, role: 'pr_lead' };
+/** config/people.json（B 的檔案）裡，aliases 含這個名稱的人。比對不分大小寫。 */
+function findByAlias(names, cfg) {
+  const wanted = names.filter(Boolean).map((n) => String(n).toLowerCase());
+  for (const [name, p] of Object.entries(cfg.people?.people ?? {})) {
+    const aliases = [name, ...(p.aliases ?? [])].map((x) => String(x).toLowerCase());
+    if (aliases.some((x) => wanted.includes(x))) return { user: name, role: p.role };
+  }
+  return null;
+}
+
+/** 這個人是誰：先比 aliases；伺服器擁有者預設是公關主管；其餘當工程。 */
+export function resolvePerson({ authorId, authorName, displayName, isOwner }, cfg) {
+  const hit = findByAlias([authorId, authorName, displayName], cfg);
+  if (hit) return hit;
+  if (isOwner) {
+    const lead = Object.entries(cfg.people?.people ?? {}).find(([, p]) => p.role === 'pr_lead');
+    return { user: lead?.[0] ?? authorName, role: 'pr_lead' };
+  }
   return { user: authorName, role: 'engineering' };
 }
 
@@ -31,14 +44,15 @@ export function normalize(m, cfg, selfId) {
   if (m.author?.id === selfId) return null;
   const isWebhook = Boolean(m.webhookId);
   const authorName = m.author?.username ?? 'unknown';
-  if (isWebhook && !cfg.channels.webhookSpeakers?.includes(authorName)) return null;
+  const knownWebhook = cfg.channels.webhookSpeakers?.includes(authorName) || findByAlias([authorName], cfg);
+  if (isWebhook && !knownWebhook) return null;
   if (m.author?.bot && !isWebhook) return null;
   const channel = resolveChannel(m.channel?.name, cfg);
   if (!channel) return null;
   const text = (m.content ?? '').trim();
   if (!text) return null;
   const who = resolvePerson(
-    { authorId: m.author?.id, authorName, isOwner: m.guild?.ownerId === m.author?.id },
+    { authorId: m.author?.id, authorName, displayName: m.member?.displayName ?? m.author?.globalName, isOwner: m.guild?.ownerId === m.author?.id },
     cfg,
   );
   return {

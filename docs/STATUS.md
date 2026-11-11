@@ -130,10 +130,11 @@ SQLite 一個檔 `stick.db`，五張表，**只新增、不修改、不刪除**�
 - [ ] `!review` 指令接到 C
 
 ### B：誰看得到什麼
-- [ ] `src/db.js`：五張表與寫入、查詢函式
-- [ ] `config/people.json` 與 `scripts/seed.js`
-- [ ] `src/access.js`：讀取口、主管對照、遮蔽
-- [ ] 測試：每個職位 × 每個等級
+> **A、C 現在就能用**：`git merge origin/feat/access`（或 `git checkout origin/feat/access -- src/db.js src/access.js config/people.json scripts/`），再 `npm run seed`。多出來的讀取函式：`listMessages`、`getMessage`、`getDraft`、`listReviews(draftId)`；`insertDraft` 給 `parent_id` 會自動算 `revision`。測試用 `openStore(':memory:')`。
+- [x] `src/db.js`：五張表與寫入、查詢函式；UPDATE／DELETE 由 trigger 擋（20:12）
+- [x] `config/people.json` 與 `scripts/seed.js`：`npm run seed`、`--v2`、`--c4`、`--reset`（20:14）
+- [x] `src/access.js`：讀取口、主管對照、遮蔽；另有 `sensitivityOfItems(ids)` 給 C 標問題等級（20:14）
+- [x] 測試：每個職位 × 每個等級，16 個全過（20:14）
 - [ ] `scripts/compare.js`：有無 Stick 各 5 次
 - [ ] `scripts/leak-check.js`：Erin 視角限閱原話出現 0 次
 - [ ] demo 發言腳本（webhook 扮 Dana）

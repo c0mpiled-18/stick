@@ -38,6 +38,7 @@ async function handleReview(msg, raw) {
 
 client.on(Events.MessageCreate, async (raw) => {
   const msg = normalize(raw, cfg, client.user.id);
+  if (process.env.STICK_DEBUG) console.log(`[raw] #${raw.channel?.name} ${raw.author?.username} bot=${raw.author?.bot} 長度=${raw.content?.length} → ${msg ? '處理' : '略過'}`);
   if (!msg) return;
   console.log(`[msg] #${msg.channel} ${msg.author}(${msg.role}): ${msg.text.slice(0, 80)} ${msg.url}`);
   try {

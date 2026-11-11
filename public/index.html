@@ -111,7 +111,15 @@ const ROLE = { pr_staff: 'PR staff', pr_lead: 'PR lead', engineering: 'Engineeri
 const VERDICT = { ok: 'Approved', needs_change: 'Needs changes', block: 'Blocked' };
 const time = (iso) => (iso ? new Date(iso).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : '');
 
-let viewer = decodeURIComponent(location.hash.slice(1)) || 'Erin';
+// 網址 # 後面是身份；格式壞掉（例如單獨一個 %）就當成 Erin，不讓畫面壞掉
+const fromHash = () => {
+  try {
+    return decodeURIComponent(location.hash.slice(1)) || 'Erin';
+  } catch {
+    return 'Erin';
+  }
+};
+let viewer = fromHash();
 let last = '';
 
 function renderSeg(s) {
@@ -239,7 +247,7 @@ $('form').addEventListener('submit', async (e) => {
 });
 
 addEventListener('hashchange', () => {
-  viewer = decodeURIComponent(location.hash.slice(1)) || 'Erin';
+  viewer = fromHash();
   tick();
 });
 

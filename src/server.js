@@ -86,14 +86,17 @@ async function runReview(draftId, withStick) {
   }
 }
 
-function submit({ viewer, text, withStick = true }) {
+function submit(body) {
+  // 內容不是物件（例如 null、陣列、字串）一律當成格式錯誤
+  if (!body || typeof body !== 'object' || Array.isArray(body)) throw Object.assign(new Error('body must be a JSON object'), { status: 400 });
+  const { viewer, text, withStick = true } = body;
   const author = access.resolvePerson(viewer);
   if (!author) throw Object.assign(new Error('unknown person'), { status: 400 });
-  const body = String(text ?? '').trim();
-  if (!body) throw Object.assign(new Error('draft is empty'), { status: 400 });
+  const draftText = String(text ?? '').trim();
+  if (!draftText) throw Object.assign(new Error('draft is empty'), { status: 400 });
   // 跟機器人一樣：同一個作者的上一份稿子當成前一版
   const prev = db.listDrafts().filter((d) => d.author === author).at(-1);
-  const draftId = db.insertDraft({ author, title: prev?.title ?? body.slice(0, 40), text: body, parent_id: prev?.id ?? null });
+  const draftId = db.insertDraft({ author, title: prev?.title ?? draftText.slice(0, 40), text: draftText, parent_id: prev?.id ?? null });
   runReview(draftId, withStick !== false); // 不等它，網頁每秒更新會看到結果
   return { draftId };
 }

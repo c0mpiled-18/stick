@@ -42,7 +42,7 @@ test('事故頻道一律至少 restricted，並發出 context_added 事件', asy
     { db, extract: async () => [{ summary: 'Legal hold', topics: ['security', 'comms'], sensitivity: 'internal', quote: text }] });
   assert.equal(db.rows.items[0].sensitivity, 'restricted');
   assert.equal(db.rows.events.length, 1);
-  const payload = JSON.parse(db.rows.events[0].payload);
+  const payload = db.rows.events[0].payload;
   assert.deepEqual(payload.topics.sort(), ['comms', 'security']);
 });
 

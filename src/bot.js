@@ -27,7 +27,7 @@ async function handleReview(msg, raw) {
   const prev = (await db.listDrafts()).filter((d) => d.author === msg.author).at(-1);
   const draftId = await db.insertDraft({
     author: msg.author, title: text.slice(0, 40), text,
-    revision: (prev?.revision ?? 0) + 1, parent_id: prev?.id ?? null, created_at: msg.created_at,
+    parent_id: prev?.id ?? null, created_at: msg.created_at, // 版次由 db.js 自己加
   });
   const result = await review.reviewDraft({ draftId, trigger: 'submitted', withStick: true });
   const shown = access?.redactReviewFor ? await access.redactReviewFor(msg.author, result) : result;

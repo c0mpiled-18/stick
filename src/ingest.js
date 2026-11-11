@@ -78,7 +78,7 @@ export async function ingestMessage(msg, deps = {}) {
     if (!c?.quote || !msg.text.includes(c.quote)) continue; // 不是逐字原話：丟掉
     const id = await db.insertContextItem({
       summary: c.summary,
-      topics: JSON.stringify(c.topics ?? []),
+      topics: c.topics ?? [],
       sensitivity: maxSensitivity(floor, c.sensitivity),
       source_message_id: messageId,
       source_quote: c.quote,
@@ -90,7 +90,7 @@ export async function ingestMessage(msg, deps = {}) {
   if (ids.length) {
     await db.insertEvent({
       type: 'context_added',
-      payload: JSON.stringify({ context_item_ids: ids, topics: [...topics], message_id: messageId }),
+      payload: { context_item_ids: ids, topics: [...topics], message_id: messageId },
       at: new Date().toISOString(),
     });
   }

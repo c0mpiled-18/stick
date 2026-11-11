@@ -1,7 +1,7 @@
 # Stick：共同開發計畫與狀態
 
 > **這一頁是全隊唯一的進度正本。** 做完一項就把 `[ ]` 改成 `[x]`、填上時間，推上來。卡住超過 10 分鐘就寫在最下面的「卡住」。
-> 最後更新：20:10（Felix）：分工填上人名、地基推上 main。前一筆 20:05（antonshuo）：場景改為公關審稿，見下方「19:50 改了什麼」；分工待 Felix 依新場景更新
+> 最後更新：20:16（Felix）：A 段五項完成、已接上 B 的 db.js。前一筆：20:10（Felix）：分工填上人名、地基推上 main。前一筆 20:05（antonshuo）：場景改為公關審稿，見下方「19:50 改了什麼」；分工待 Felix 依新場景更新
 > 細節看 `docs/build-plan.md`（影片、資料格式、旁白）與 `docs/intent-map.md`（架構圖）。
 
 ## 現在在哪
@@ -118,16 +118,16 @@ SQLite 一個檔 `stick.db`，五張表，**只新增、不修改、不刪除**�
 - [x] 文件推上 `docs/`（19:37）
 - [x] 場景改為公關審稿，文件更新（19:50）
 - [ ] 兩位隊友接受邀請、抓下 repo、跑 `./.collab/setup.sh`
-- [ ] 開 `eng-general`、`eng-incident`、`pr-drafts` 三個頻道，機器人讀得到（Felix）
+- [x] 頻道：伺服器現有 `discussion`、`decision`，在 `config/channels.json` 對成 `eng-general`（internal）與 `eng-incident`（restricted）。`pr-drafts` 沒開，`!review` 在這兩個頻道都收（20:10）
 - [x] `package.json`、`.env.example` 已在 `main`（20:10）。資料庫用 Node 內建的 `node:sqlite`，不用另外裝套件；`npm install` 後 `npm test` 跑測試。**三個人都不要再改 `package.json`，要加套件先講。**
 
 ### A：話怎麼進來
-- [ ] `src/bot.js`：連線，在 `eng-general` 打一句，終端機印出作者、頻道、連結
-- [ ] 訊息入庫，機器人自己的訊息不入庫
-- [ ] `src/ingest.js`：模型整理成脈絡，非逐字原話丟掉
-- [ ] 等級＝`max(頻道下限, 模型判斷)`
-- [ ] 寫完脈絡發 `context_added` 事件
-- [ ] `!review` 指令接到 C
+- [x] `src/bot.js`：連線，在 `discussion` 打一句，終端機印出作者、角色、頻道、連結（20:13 實測；分支 `feat/ingest`）
+- [x] 訊息入庫，機器人自己與沒登記的 webhook 不入庫（20:15，用 `feat/access` 的 `db.js` 實測）
+- [x] `src/ingest.js`：模型整理成脈絡，非逐字原話丟掉（20:07，真模型每則 1 到 2 秒）
+- [x] 等級＝`max(頻道下限, 模型判斷)`（測試守著）
+- [x] 寫完脈絡發 `context_added` 事件；`payload` 是 `{ context_item_ids, topics, message_id }`
+- [ ] `!review` 指令接到 C（機器人這邊寫好了，等 `review.js` 的 `reviewDraft` 與 `access.js` 的 `redactReviewFor`）
 
 ### B：誰看得到什麼
 > **A、C 現在就能用**：`git merge origin/feat/access`（或 `git checkout origin/feat/access -- src/db.js src/access.js config/people.json scripts/`），再 `npm run seed`。多出來的讀取函式：`listMessages`、`getMessage`、`getDraft`、`listReviews(draftId)`；`insertDraft` 給 `parent_id` 會自動算 `revision`。測試用 `openStore(':memory:')`。
@@ -181,5 +181,7 @@ SQLite 一個檔 `stick.db`，五張表，**只新增、不修改、不刪除**�
 | 影片裡四個發言者，哪幾個是真人帳號 | 三人當面 | 21:15 前 |
 
 ## 卡住
+
+- 20:15 Felix：分支 `feat/control`（20:07 推的 `authority.js`、`audit.js`）是照舊場景寫的，新場景用不到。確認後請刪掉或標明不合併，免得 21:00 合錯。
 
 （寫：幾點、誰、卡在哪、試過什麼）

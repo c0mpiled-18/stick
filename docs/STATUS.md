@@ -38,7 +38,7 @@ Stick 讀團隊的 Slack／Discord，把對話整理成帶敏感等級的脈絡�
 
 | | A：話怎麼進來 | B：誰看得到什麼 | C：審稿與畫面 |
 |---|---|---|---|
-| 誰 | **Felix** | **第三位隊友（待確認）** | **隊友（待確認）** |
+| 誰（暫定，分工未講定） | **Felix** | **碩展** | **昶龍** |
 | 分支 | `feat/ingest` | `feat/access` | `feat/agent` |
 | 檔案 | `src/bot.js`、`src/sources/discord.js`、`src/ingest.js`、`config/channels.json` | `src/db.js`、`src/access.js`、`config/people.json`、`scripts/seed.js`、`scripts/compare.js`、`scripts/leak-check.js` | `src/review.js`、`src/server.js`、`public/index.html` |
 | 做完的樣子 | 在 Discord 講一句話，脈絡表多一筆，等級正確，事件表多一筆 | Erin 拿到 1 條、Alice 拿到 3 條；遮蔽函式通過測試 | 交稿後產出審稿結果，網頁切換身份看得到完整版與遮蔽版 |
@@ -47,7 +47,7 @@ B 與 C 不用等 A：開工先用 `scripts/seed.js` 塞 demo 資料（build-pla
 
 ## 時間表
 
-| 時間 | A（Felix） | B | C |
+| 時間 | A（Felix） | B（碩展） | C（昶龍） |
 |---|---|---|---|
 | 19:50–20:05 | **一起**：確認下面「交界」。B 推 `src/db.js` 與 seed | 同左 | 同左 |
 | 20:05–20:55 | 機器人連線 → 訊息入庫 → 整理成脈絡 → 發事件 | 讀取口 → 遮蔽 → 測試 | 審稿（用 seed）→ 引用比對 |
@@ -130,7 +130,7 @@ SQLite 一個檔 `stick.db`，五張表，**只新增、不修改、不刪除**�
 - [ ] 寫完脈絡發 `context_added` 事件
 - [ ] `!review` 指令接到 C
 
-### B：誰看得到什麼（第三位隊友）
+### B：誰看得到什麼（碩展，暫定）
 - [ ] `src/db.js`：五張表與寫入、查詢函式
 - [ ] `config/people.json` 與 `scripts/seed.js`
 - [ ] `src/access.js`：讀取口、主管對照、遮蔽
@@ -139,7 +139,7 @@ SQLite 一個檔 `stick.db`，五張表，**只新增、不修改、不刪除**�
 - [ ] `scripts/leak-check.js`：Erin 視角限閱原話出現 0 次
 - [ ] demo 發言腳本（webhook 扮 Dana）
 
-### C：審稿與畫面（隊友）
+### C：審稿與畫面（昶龍，暫定）
 - [ ] `src/review.js`：組脈絡包、審稿、引用逐字比對、問題等級
 - [ ] `src/server.js` 與網頁：切換身份、脈絡、稿件、審稿結果、點引用跳回原訊息
 - [ ] `onContextAdded`：主題相關的稿件重審
@@ -177,7 +177,7 @@ SQLite 一個檔 `stick.db`，五張表，**只新增、不修改、不刪除**�
 | 事情 | 誰來確認 | 什麼時候 |
 |---|---|---|
 | 新場景三人都同意 | 三人當面 | 19:55 前 |
-| B、C 各是哪位隊友 | 三人當面 | 19:55 前 |
+| 分工：B＝碩展、C＝昶龍只是暫定，A／B／C 各做什麼三人還沒講定 | 三人當面 | 20:05 前 |
 | 能不能開三個新頻道並讓機器人讀到；不行就用 `一般`＝`eng-general`、`dev-process`＝`eng-incident`、網頁交稿 | Felix | 20:05 前 |
 | 沒有 Stick 時，審稿 agent 真的會說稿子沒問題嗎 | C | `review.js` 一做好就跑 |
 | 影片裡四個發言者，哪幾個是真人帳號 | 三人當面 | 21:15 前 |

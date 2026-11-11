@@ -1,7 +1,7 @@
 # Stick：共同開發計畫與狀態
 
 > **這一頁是全隊唯一的進度正本。** 做完一項就把 `[ ]` 改成 `[x]`、填上時間，推上來。卡住超過 10 分鐘就寫在最下面的「卡住」。
-> 最後更新：20:05（antonshuo）：場景改為公關審稿，見下方「19:50 改了什麼」；分工待 Felix 依新場景更新
+> 最後更新：20:10（Felix）：分工填上人名、地基推上 main。前一筆 20:05（antonshuo）：場景改為公關審稿，見下方「19:50 改了什麼」；分工待 Felix 依新場景更新
 > 細節看 `docs/build-plan.md`（影片、資料格式、旁白）與 `docs/intent-map.md`（架構圖）。
 
 ## 現在在哪
@@ -32,17 +32,15 @@
 
 Stick 讀團隊的 Slack／Discord，把對話整理成帶敏感等級的脈絡。Erin 交稿時，她主管 Alice 的審稿 agent 用 **Alice 的權限**比對最新脈絡：先擋下，指出兩個衝突，每條附原訊息。Erin 拿到的版本只看得到她有權知道的那條。之後工程又有新討論，已過審的稿子會自動重審。
 
-## 分工：待 Felix 依新場景更新
+## 分工（20:10 Felix 這邊更新）
 
-**人選（Felix 20:02 定）**：Felix（`Felix-Lai-12`）、antonshuo、ryan（`ryan234r32`）。分支：`feat/memory`、`feat/control`、`feat/web`。
+照資料流切成三段，三個人不改同一個檔案。**A＝Felix、B＝antonshuo、C＝ryan**（對應 Felix 20:02 說的：他做進來與脈絡、antonshuo 做權限、ryan 做畫面；有出入當面講，改這一行）。
 
-20:02 版的檔案歸屬是照舊場景（決策權、`authority.js`、`audit.js`）切的，不適用新場景；各自負責哪些檔案由 Felix 更新到這裡。新場景照資料流切成三段，可參考：
-
-| 段 | 做什麼 | 檔案 |
+| 段（誰／分支） | 做什麼 | 檔案 |
 |---|---|---|
-| A：話怎麼進來 | 機器人、訊息入庫、整理成脈絡並標敏感等級、發事件 | `src/bot.js`、`src/sources/discord.js`、`src/ingest.js`、`config/channels.json` |
-| B：誰看得到什麼 | 資料庫、讀取口、遮蔽、seed 與 demo 資料、兩支腳本 | `src/db.js`、`src/access.js`、`config/people.json`、`scripts/seed.js`、`scripts/compare.js`、`scripts/leak-check.js` |
-| C：審稿與畫面 | 審稿、網頁、重審 | `src/review.js`、`src/server.js`、`public/index.html` |
+| A：話怎麼進來（**Felix**／`feat/ingest`） | 機器人、訊息入庫、整理成脈絡並標敏感等級、發事件 | `src/bot.js`、`src/sources/discord.js`、`src/ingest.js`、`config/channels.json` |
+| B：誰看得到什麼（**antonshuo**／`feat/access`） | 資料庫、讀取口、遮蔽、seed 與 demo 資料、兩支腳本 | `src/db.js`、`src/access.js`、`config/people.json`、`scripts/seed.js`、`scripts/compare.js`、`scripts/leak-check.js` |
+| C：審稿與畫面（**ryan**／`feat/agent`） | 審稿、網頁、重審 | `src/review.js`、`src/server.js`、`public/index.html` |
 
 B 不用等任何人，開工先推 `src/db.js` 與 seed（build-plan 第 6 節），另外兩段就能用假資料往下做。
 
@@ -121,7 +119,7 @@ SQLite 一個檔 `stick.db`，五張表，**只新增、不修改、不刪除**�
 - [x] 場景改為公關審稿，文件更新（19:50）
 - [ ] 兩位隊友接受邀請、抓下 repo、跑 `./.collab/setup.sh`
 - [ ] 開 `eng-general`、`eng-incident`、`pr-drafts` 三個頻道，機器人讀得到（Felix）
-- [ ] `package.json`、`.env.example`（Felix）
+- [x] `package.json`、`.env.example` 已在 `main`（20:10）。資料庫用 Node 內建的 `node:sqlite`，不用另外裝套件；`npm install` 後 `npm test` 跑測試。**三個人都不要再改 `package.json`，要加套件先講。**
 
 ### A：話怎麼進來
 - [ ] `src/bot.js`：連線，在 `eng-general` 打一句，終端機印出作者、頻道、連結
@@ -177,7 +175,6 @@ SQLite 一個檔 `stick.db`，五張表，**只新增、不修改、不刪除**�
 
 | 事情 | 誰來確認 | 什麼時候 |
 |---|---|---|
-| 新場景下誰負責 A／B／C 哪一段 | Felix 更新本頁分工 | 20:10 前 |
 | 能不能開三個新頻道並讓機器人讀到；不行就用 `一般`＝`eng-general`、`dev-process`＝`eng-incident`、網頁交稿 | Felix | 20:05 前 |
 | 沒有 Stick 時，審稿 agent 真的會說稿子沒問題嗎 | C | `review.js` 一做好就跑 |
 | 影片裡四個發言者，哪幾個是真人帳號 | 三人當面 | 21:15 前 |

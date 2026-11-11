@@ -7,3 +7,5 @@ CLAUDE.local.md
 __pycache__/
 .DS_Store
 node_modules/
+stick.db
+stick.db-*

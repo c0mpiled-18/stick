@@ -1,7 +1,7 @@
 # Stick：共同開發計畫與狀態
 
 > **這一頁是全隊唯一的進度正本。** 做完一項就把 `[ ]` 改成 `[x]`、填上時間，推上來。卡住超過 10 分鐘就寫在最下面的「卡住」。
-> 最後更新：20:10（Felix）：分工填上人名、地基推上 main。前一筆 20:05（antonshuo）：場景改為公關審稿，見下方「19:50 改了什麼」；分工待 Felix 依新場景更新
+> 最後更新：20:16（Felix）：A 段五項完成、已接上 B 的 db.js。前一筆：20:10（Felix）：分工填上人名、地基推上 main。前一筆 20:05（antonshuo）：場景改為公關審稿，見下方「19:50 改了什麼」；分工待 Felix 依新場景更新
 > 細節看 `docs/build-plan.md`（影片、資料格式、旁白）與 `docs/intent-map.md`（架構圖）。
 
 ## 現在在哪
@@ -118,25 +118,28 @@ SQLite 一個檔 `stick.db`，五張表，**只新增、不修改、不刪除**�
 - [x] 文件推上 `docs/`（19:37）
 - [x] 場景改為公關審稿，文件更新（19:50）
 - [ ] 兩位隊友接受邀請、抓下 repo、跑 `./.collab/setup.sh`
-- [ ] 開 `eng-general`、`eng-incident`、`pr-drafts` 三個頻道，機器人讀得到（Felix）
+- [x] 頻道：伺服器現有 `discussion`、`decision`，在 `config/channels.json` 對成 `eng-general`（internal）與 `eng-incident`（restricted）。`pr-drafts` 沒開，`!review` 在這兩個頻道都收（20:10）
 - [x] `package.json`、`.env.example` 已在 `main`（20:10）。資料庫用 Node 內建的 `node:sqlite`，不用另外裝套件；`npm install` 後 `npm test` 跑測試。**三個人都不要再改 `package.json`，要加套件先講。**
 
 ### A：話怎麼進來
-- [ ] `src/bot.js`：連線，在 `eng-general` 打一句，終端機印出作者、頻道、連結
-- [ ] 訊息入庫，機器人自己的訊息不入庫
-- [ ] `src/ingest.js`：模型整理成脈絡，非逐字原話丟掉
-- [ ] 等級＝`max(頻道下限, 模型判斷)`
-- [ ] 寫完脈絡發 `context_added` 事件
-- [ ] `!review` 指令接到 C
+- [x] `src/bot.js`：連線，在 `discussion` 打一句，終端機印出作者、角色、頻道、連結（20:13 實測；分支 `feat/ingest`）
+- [x] 訊息入庫，機器人自己與沒登記的 webhook 不入庫（20:15，用 `feat/access` 的 `db.js` 實測）
+- [x] `src/ingest.js`：模型整理成脈絡，非逐字原話丟掉（20:07，真模型每則 1 到 2 秒）
+- [x] 等級＝`max(頻道下限, 模型判斷)`（測試守著）
+- [x] 寫完脈絡發 `context_added` 事件；`payload` 是 `{ context_item_ids, topics, message_id }`
+- [ ] `!review` 指令接到 C（機器人這邊寫好了，等 `review.js` 的 `reviewDraft` 與 `access.js` 的 `redactReviewFor`）
 
 ### B：誰看得到什麼
-- [ ] `src/db.js`：五張表與寫入、查詢函式
-- [ ] `config/people.json` 與 `scripts/seed.js`
-- [ ] `src/access.js`：讀取口、主管對照、遮蔽
-- [ ] 測試：每個職位 × 每個等級
-- [ ] `scripts/compare.js`：有無 Stick 各 5 次
-- [ ] `scripts/leak-check.js`：Erin 視角限閱原話出現 0 次
-- [ ] demo 發言腳本（webhook 扮 Dana）
+> **A、C 現在就能用**：`git merge origin/feat/access`（或 `git checkout origin/feat/access -- src/db.js src/access.js config/people.json scripts/`），再 `npm run seed`。多出來的讀取函式：`listMessages`、`getMessage`、`getDraft`、`listReviews(draftId)`；`insertDraft` 給 `parent_id` 會自動算 `revision`。測試用 `openStore(':memory:')`。
+- [x] `src/db.js`：五張表與寫入、查詢函式；UPDATE／DELETE 由 trigger 擋（20:12）
+- [x] `config/people.json` 與 `scripts/seed.js`：`npm run seed`、`--v2`、`--c4`、`--reset`（20:14）
+- [x] `src/access.js`：讀取口、主管對照、遮蔽；另有 `sensitivityOfItems(ids)` 給 C 標問題等級（20:14）
+- [x] 測試：每個職位 × 每個等級，16 個全過（20:14）
+- [ ] `scripts/compare.js`：有無 Stick 各 5 次。**程式已寫好（20:16），等 C 的 `src/review.js` 合進來才能跑**：`node --env-file=.env scripts/compare.js`
+- [x] `scripts/leak-check.js`：Erin 視角限閱原話出現 0 次；故意標錯等級的審稿抓得到（20:16）。C 的伺服器好了加 `--url .../api/state?viewer=Erin` 一起掃
+- [x] demo 發言腳本 `scripts/speak.js`（20:25，在 `feat/access`）：`node --env-file=.env scripts/speak.js base`（C1–C3）、`C4`、`v1`；`--dry` 只印不送。**20:28 已用 webhook 實際送出測試訊息（HTTP 200）。** 目前只有 `DISCORD_WEBHOOK_ENG_INCIDENT`（C2、C3 可發；應建在 `decision`），C1、C4 還缺 `discussion` 的 webhook。seed 的事件格式已對齊 A：`{ context_item_ids, topics, message_id }`。
+  - 設定：在 Discord 對要用的頻道「編輯頻道 → 整合 → Webhook → 新 Webhook → 複製網址」，放進自己的 `.env`（不進 repo、不貼聊天）：`DISCORD_WEBHOOK_ENG_GENERAL`、`DISCORD_WEBHOOK_ENG_INCIDENT`、選填 `DISCORD_WEBHOOK_PR_DRAFTS`。變數名照 demo 的頻道角色取，網址指到實際頻道就好（沿用 `一般`／`dev-process` 也可以）。
+  - **給 Felix（A）**：webhook 訊息的 `author.bot` 是 true、`message.webhookId` 有值。機器人要把「有 `webhookId` 且名字在 `config/people.json` 別名裡」的訊息當成人的訊息，不能一律略過，否則 Dana 的話進不了脈絡。
 
 ### C：審稿與畫面
 - [ ] `src/review.js`：組脈絡包、審稿、引用逐字比對、問題等級
@@ -180,5 +183,9 @@ SQLite 一個檔 `stick.db`，五張表，**只新增、不修改、不刪除**�
 | 影片裡四個發言者，哪幾個是真人帳號 | 三人當面 | 21:15 前 |
 
 ## 卡住
+
+- 20:25 Felix：`config/people.json` 我在 `feat/ingest` 加了兩個別名（`felix425.` → Alice、`shuozhan`／`碩展` → Ben），只動那兩行。**antonshuo 合併時留意這個檔**。ryan 的 Discord 帳號還不知道（他沒在伺服器發過言），要當 Erin 的話把帳號名稱加進 Erin 的 `aliases`；不加就用 `scripts/speak.js` 的 webhook 扮 Erin。
+
+- 20:15 Felix：分支 `feat/control`（20:07 推的 `authority.js`、`audit.js`）是照舊場景寫的，新場景用不到。確認後請刪掉或標明不合併，免得 21:00 合錯。
 
 （寫：幾點、誰、卡在哪、試過什麼）

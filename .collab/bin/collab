@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+# Shortcut so agents can run `.collab/bin/collab team` etc.
+exec python3 "$(dirname "$0")/collab.py" "$@"

@@ -1,0 +1,170 @@
+[
+ {
+  "number": 1,
+  "title": "Status: alice",
+  "labels": [
+   {
+    "name": "status"
+   }
+  ],
+  "assignees": [
+   {
+    "login": "alice"
+   }
+  ],
+  "author": {
+   "login": "alice"
+  },
+  "updatedAt": "2026-11-11T11:20:00Z",
+  "state": "OPEN",
+  "body": "Current task: #12 Login page\nDoing: form",
+  "comments": []
+ },
+ {
+  "number": 2,
+  "title": "Status: bob",
+  "labels": [
+   {
+    "name": "status"
+   }
+  ],
+  "assignees": [
+   {
+    "login": "bob"
+   }
+  ],
+  "author": {
+   "login": "bob"
+  },
+  "updatedAt": "2026-11-11T11:05:00Z",
+  "state": "OPEN",
+  "body": "Current task: #13 Payments API\nDone: Stripe checkout session\nDoing: webhook signature\nBlocked on: #15",
+  "comments": [
+   {
+    "body": "**@bob's agent** · `bob/payments` @ `a1b2c3d` · 1 new commit(s)\n- Webhook signature test passes",
+    "createdAt": "2026-11-11T12:40:00Z"
+   }
+  ]
+ },
+ {
+  "number": 12,
+  "title": "Login page",
+  "labels": [
+   {
+    "name": "task"
+   }
+  ],
+  "assignees": [
+   {
+    "login": "alice"
+   }
+  ],
+  "author": {
+   "login": "alice"
+  },
+  "updatedAt": "2026-11-11T11:20:00Z",
+  "state": "OPEN",
+  "body": "",
+  "comments": []
+ },
+ {
+  "number": 13,
+  "title": "Payments API",
+  "labels": [
+   {
+    "name": "task"
+   },
+   {
+    "name": "blocked"
+   }
+  ],
+  "assignees": [
+   {
+    "login": "bob"
+   }
+  ],
+  "author": {
+   "login": "alice"
+  },
+  "updatedAt": "2026-11-11T11:20:00Z",
+  "state": "OPEN",
+  "body": "",
+  "comments": []
+ },
+ {
+  "number": 14,
+  "title": "Record 90-second demo video",
+  "labels": [
+   {
+    "name": "task"
+   }
+  ],
+  "assignees": [],
+  "author": {
+   "login": "alice"
+  },
+  "updatedAt": "2026-11-11T11:20:00Z",
+  "state": "OPEN",
+  "body": "",
+  "comments": []
+ },
+ {
+  "number": 15,
+  "title": "Decide the auth token format",
+  "labels": [
+   {
+    "name": "request"
+   }
+  ],
+  "assignees": [
+   {
+    "login": "alice"
+   }
+  ],
+  "author": {
+   "login": "bob"
+  },
+  "updatedAt": "2026-11-11T11:20:00Z",
+  "state": "OPEN",
+  "body": "",
+  "comments": []
+ },
+ {
+  "number": 16,
+  "title": "Use Next.js for the web app",
+  "labels": [
+   {
+    "name": "decision"
+   }
+  ],
+  "assignees": [],
+  "author": {
+   "login": "bob"
+  },
+  "updatedAt": "2026-11-11T11:20:00Z",
+  "state": "OPEN",
+  "body": "",
+  "comments": []
+ },
+ {
+  "number": 18,
+  "title": "Expose /me endpoint",
+  "labels": [
+   {
+    "name": "request"
+   }
+  ],
+  "assignees": [
+   {
+    "login": "bob"
+   }
+  ],
+  "author": {
+   "login": "alice"
+  },
+  "updatedAt": "2026-11-11T11:00:00Z",
+  "state": "OPEN",
+  "body": "",
+  "comments": []
+ }
+]

@@ -1,0 +1,46 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.collab/bin/collab team)",
+      "Bash(./.collab/bin/collab team)",
+      "Bash(gh issue list:*)",
+      "Bash(gh issue view:*)"
+    ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.collab/bin/collab.py\" session-start || true",
+            "timeout": 45
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.collab/bin/collab.py\" prompt-check || true",
+            "timeout": 8
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.collab/bin/collab.py\" stop-feed || true",
+            "timeout": 30,
+            "async": true
+          }
+        ]
+      }
+    ]
+  }
+}

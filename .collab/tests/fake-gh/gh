@@ -1,0 +1,48 @@
+#!/usr/bin/env python3
+"""Stand-in for the GitHub CLI used by .collab/tests/run.sh. Reads issues from $FAKE_GH_ISSUES,
+logs every call (argv + stdin) to $FAKE_GH_LOG as JSON lines."""
+import json
+import os
+import sys
+
+args = sys.argv[1:]
+stdin = sys.stdin.read() if "--body-file" in args and args[args.index("--body-file") + 1] == "-" else ""
+with open(os.environ["FAKE_GH_LOG"], "a") as log:
+    log.write(json.dumps({"args": args, "stdin": stdin}, ensure_ascii=False) + "\n")
+
+login = os.environ.get("FAKE_LOGIN", "alice")
+issues = json.load(open(os.environ["FAKE_GH_ISSUES"]))
+
+
+def opt(name, default=None):
+    return args[args.index(name) + 1] if name in args else default
+
+
+def project(items, fields):
+    keep = fields.split(",")
+    return [{k: i.get(k) for k in keep} for i in items]
+
+
+if args[:2] == ["auth", "status"]:
+    print("Token scopes: 'repo', 'read:org'", file=sys.stderr)
+elif args[:2] == ["repo", "view"]:
+    sys.exit(1)  # the repo does not exist yet
+elif args[:2] == ["api", "user"]:
+    print(login)
+elif args[:2] == ["issue", "list"]:
+    state = opt("--state", "open")
+    wanted = [args[n + 1] for n, a in enumerate(args) if a == "--label"]
+    out = [i for i in issues
+           if (state == "all" or i["state"] == state.upper())
+           and all(w in {l["name"] for l in i["labels"]} for w in wanted)
+           and (opt("--author") != "@me" or i["author"]["login"] == login)]
+    print(json.dumps(project(out, opt("--json"))))
+elif args[:2] == ["issue", "view"]:
+    issue = dict(next(i for i in issues if str(i["number"]) == args[2]))
+    rival = os.environ.get("FAKE_RACE_LOGIN")  # a rival shows up when claim re-checks after assigning itself
+    if rival and opt("--json") == "assignees" and f'["issue", "edit", "{args[2]}", "--add-assignee"' in open(os.environ["FAKE_GH_LOG"]).read():
+        issue["assignees"] = issue["assignees"] + [{"login": rival}, {"login": login}]
+    print(json.dumps(project([issue], opt("--json"))[0]))
+elif args[:2] == ["issue", "create"]:
+    print("https://github.com/acme/demo/issues/99")
+# comment, edit, label create, api writes: logged only

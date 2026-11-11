@@ -13,25 +13,40 @@ import { createServer } from 'node:http';
 import { readFileSync } from 'node:fs';
 import * as db from './db.js';
 import * as access from './access.js';
-import { reviewDraft, onContextAdded, staleDraftIds } from './review.js';
+import { reviewDraft, startReReviewLoop } from './review.js'; // antonshuo 寫的審稿層
 
 const PORT = Number(process.env.PORT) || 3000;
 const PEOPLE = JSON.parse(readFileSync(new URL('../config/people.json', import.meta.url), 'utf8')).people;
 const PAGE = new URL('../public/index.html', import.meta.url);
 
-// 重審由誰觸發：機器人收到新訊息會自己叫 onContextAdded。這裡的輪詢是備援，
-// 稿件「需重審」超過 GRACE 毫秒還沒人審才動手。沒有機器人（沒設 DISCORD_BOT_TOKEN）就立刻審。
-const GRACE = Number(process.env.STICK_REREVIEW_GRACE_MS ?? (process.env.DISCORD_BOT_TOKEN ? 20_000 : 0));
-const POLL_MS = 2_000;
+// 重審只能有一個人觸發（STATUS「卡住」20:40）：預設由機器人在收到新訊息時觸發，這裡不重審。
+// 沒有機器人、只用 seed 假資料開發時，用 STICK_REREVIEW=1 npm run server 讓伺服器自己掃 events。
+const REREVIEW = process.env.STICK_REREVIEW === '1';
 
 const pending = new Set(); // 正在審的稿件 id
 const errors = new Map(); // 稿件 id → 審稿失敗的訊息
-const staleSince = new Map(); // 稿件 id → 第一次發現需重審的時間
+
+/**
+ * 「需重審」：最新版、用 Stick 審過、沒被擋下，而主管現在看得到的脈絡比上次審的時候多。
+ * 只回傳稿件 id，不帶任何脈絡內容；脈絡照樣經 retrieveContext 拿。
+ */
+function staleIds(drafts, hasChild) {
+  const out = new Set();
+  for (const d of drafts) {
+    if (hasChild.has(d.id)) continue;
+    const last = db.latestReview(d.id);
+    if (!last || !last.with_stick || last.verdict === 'block') continue;
+    const seen = new Set((last.context_packet?.items ?? []).map((i) => Number(i.id)));
+    if (access.retrieveContext(last.reviewer).items.some((i) => !seen.has(Number(i.id)))) out.add(d.id);
+  }
+  return out;
+}
 
 function state(viewerInput) {
   const viewer = access.resolvePerson(viewerInput) ?? String(viewerInput ?? '');
   const drafts = db.listDrafts();
   const hasChild = new Set(drafts.map((d) => d.parent_id).filter((x) => x != null));
+  const stale = staleIds(drafts, hasChild);
   return {
     viewer,
     role: access.roleOf(viewer),
@@ -43,7 +58,7 @@ function state(viewerInput) {
         ...d,
         latest: !hasChild.has(d.id),
         reviewing: pending.has(d.id),
-        stale: staleSince.has(d.id),
+        stale: stale.has(d.id),
         error: errors.get(d.id) ?? null,
         reviews: db.listReviews(d.id).map((r) => mergeRedacted(access.redactReviewFor(viewer, r))),
       }))
@@ -83,32 +98,6 @@ function submit({ viewer, text, withStick = true }) {
   return { draftId };
 }
 
-async function pollStale() {
-  try {
-    const stale = new Set(await staleDraftIds());
-    for (const id of staleSince.keys()) if (!stale.has(id)) staleSince.delete(id);
-    const now = Date.now();
-    for (const id of stale) if (!staleSince.has(id)) staleSince.set(id, now);
-
-    const due = [...stale].filter((id) => now - staleSince.get(id) >= GRACE && !pending.has(id));
-    if (due.length === 0) return;
-    const events = db.listEvents(0);
-    const ids = [...new Set(events.flatMap((e) => e.payload?.context_item_ids ?? (e.payload?.item_id != null ? [e.payload.item_id] : [])))];
-    due.forEach((id) => pending.add(id));
-    try {
-      const redone = await onContextAdded({ context_item_ids: ids });
-      if (redone.length) console.log(`[review] re-reviewed drafts: ${redone.join(', ')}`);
-    } catch (e) {
-      due.forEach((id) => errors.set(id, e.message));
-      console.error(`[review] re-review failed: ${e.message}`);
-    } finally {
-      due.forEach((id) => pending.delete(id));
-    }
-  } catch (e) {
-    console.error(`[poll] ${e.message}`);
-  }
-}
-
 const json = (res, status, value) => {
   res.writeHead(status, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
   res.end(JSON.stringify(value));
@@ -146,19 +135,13 @@ const server = createServer(async (req, res) => {
   }
 });
 
-let timer = null;
-let busy = false;
+let stopLoop = null;
 server.listen(PORT, () => {
-  console.log(`[stick] http://localhost:${PORT}  (re-review grace ${GRACE} ms${process.env.ANTHROPIC_API_KEY ? '' : '; ANTHROPIC_API_KEY is not set, reviews will fail'})`);
-  timer = setInterval(async () => {
-    if (busy) return;
-    busy = true;
-    await pollStale();
-    busy = false;
-  }, POLL_MS);
+  console.log(`[stick] http://localhost:${PORT}${REREVIEW ? '  (re-reviewing on new context)' : ''}${process.env.ANTHROPIC_API_KEY ? '' : '  ANTHROPIC_API_KEY is not set, reviews will fail'}`);
+  if (REREVIEW) stopLoop = startReReviewLoop({ intervalMs: 2000, onReReviewed: (ids) => console.log(`[review] re-reviewed drafts: ${ids.join(', ')}`) });
 });
 
 process.on('SIGINT', () => {
-  clearInterval(timer);
+  stopLoop?.();
   server.close(() => process.exit(0));
 });

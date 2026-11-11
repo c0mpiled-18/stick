@@ -60,10 +60,10 @@
   .issue .n { font: 600 12px/1 var(--mono); color: var(--muted); margin-right: 6px; }
   .issue .fix { margin: 4px 0 8px; color: #33312c; }
   .issue .fix b { font-weight: 600; }
-  .issue .q { display: flex; gap: 10px; align-items: flex-start; margin: 6px 0; cursor: pointer; text-decoration: none; color: inherit; }
-  .issue .q blockquote { flex: 1; }
-  .issue .q:hover blockquote { border-left-color: var(--accent); background: #f1f3ff; }
-  .issue .q cite { font-style: normal; font-size: 12px; color: var(--muted); white-space: nowrap; padding-top: 6px; }
+  .issue .cite { display: flex; gap: 12px; align-items: flex-start; margin: 6px 0; }
+  .issue .cite blockquote { flex: 1; }
+  .issue .srcs { display: flex; flex-direction: column; gap: 2px; padding-top: 5px; min-width: 150px; }
+  .issue .srcs span { font-size: 12px; color: var(--muted); }
   .issue.redacted { color: var(--muted); display: flex; gap: 10px; align-items: center; }
   .issue.redacted .lock { font-size: 18px; }
   .history { font-size: 12px; color: var(--muted); margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
@@ -142,15 +142,17 @@ function renderContext(s) {
 
 function renderIssue(issue, n) {
   if (issue.redacted) return `<div class="issue redacted"><span class="lock">🔒</span><span><span class="n">${n}</span>${esc(issue.text)}</span></div>`;
-  const quotes = (issue.quotes ?? [])
-    .map((q) => {
-      const url = safeUrl(q.url);
-      const inner = `<blockquote>“${esc(q.quote)}”</blockquote><cite>${esc(q.author ?? '')} · #${esc(q.channel ?? '')}${url ? ' ↗' : ''}</cite>`;
+  // 一句原話，加上每個出處（作者、頻道、原訊息連結）
+  const sources = (issue.sources ?? [])
+    .map((src) => {
+      const url = safeUrl(src.url);
+      const label = `C${Number(src.id)} · ${esc(src.author ?? '')} · #${esc(src.channel ?? '')}`;
       return url
-        ? `<a class="q" data-item="${q.item_id}" href="${esc(url)}" target="_blank" rel="noopener" title="Open the original message">${inner}</a>`
-        : `<div class="q" data-item="${q.item_id}">${inner}</div>`;
+        ? `<a class="src q" data-item="${Number(src.id)}" href="${esc(url)}" target="_blank" rel="noopener" title="Open the original message">${label} ↗</a>`
+        : `<span class="q" data-item="${Number(src.id)}">${label}</span>`;
     })
     .join('');
+  const quotes = issue.quote || sources ? `<div class="cite">${issue.quote ? `<blockquote>“${esc(issue.quote)}”</blockquote>` : ''}<div class="srcs">${sources}</div></div>` : '';
   return `<div class="issue">
     <div><span class="n">${n}</span>${esc(issue.text)} ${issue.sensitivity && issue.sensitivity !== 'public' ? `<span class="lvl ${esc(issue.sensitivity)}">${esc(issue.sensitivity)}</span>` : ''}</div>
     ${issue.suggestion ? `<div class="fix"><b>Suggested fix:</b> ${esc(issue.suggestion)}</div>` : ''}
@@ -161,13 +163,14 @@ function renderIssue(issue, n) {
 function renderDraft(d) {
   const r = d.reviews.at(-1);
   let verdict;
-  if (d.reviewing || (!r && !d.error)) verdict = `<div class="verdict wait"><span class="spin"></span>${r ? 'New context arrived. Re-reviewing…' : 'Reviewing…'}</div>`;
+  if (!r && !d.reviewing && !d.error) verdict = `<div class="verdict wait">Not reviewed yet</div>`;
+  else if (d.reviewing) verdict = `<div class="verdict wait"><span class="spin"></span>Reviewing…</div>`;
   else if (d.error && !r) verdict = `<div class="verdict block">Review failed<small>${esc(d.error)}</small></div>`;
   else {
     const how = r.with_stick ? `through ${esc(r.reviewer)}’s access` : 'no team context';
     const tags = (r.with_stick ? '' : '<span class="tag">Before</span>') + (r.trigger === 'context_added' ? '<span class="tag">Re-reviewed</span>' : '');
     verdict = `<div class="verdict ${esc(r.verdict)}">${esc(VERDICT[r.verdict] ?? r.verdict)} ${tags}<small>${how}<br>${time(r.at)}</small></div>`;
-    if (d.stale) verdict += `<div class="verdict wait" style="margin-top:8px"><span class="spin"></span>New context arrived. Needs re-review…</div>`;
+    if (d.stale) verdict += `<div class="verdict wait" style="margin-top:8px"><span class="spin"></span>New context arrived since this review. Needs re-review.</div>`;
   }
   const issues = r && !d.reviewing ? r.issues.map((x, i) => renderIssue(x, i + 1)).join('') : '';
   const none = r && !d.reviewing && r.issues.length === 0 ? `<div class="issue" style="color:var(--muted)">No conflicts with what the team has said.</div>` : '';

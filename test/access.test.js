@@ -100,6 +100,12 @@ test('遮蔽：Erin 看得到日期那條，資安那條換成固定文字，脈
   assert.deepEqual(forAlice.context_packet, review.context_packet);
 });
 
+test('遮蔽：問題標成 internal 但引用限閱脈絡 → 仍然遮蔽', () => {
+  const { access, ids } = setup();
+  const r = access.redactReviewFor('Erin', { issues: [{ text: 'x', sensitivity: 'internal', cited_item_ids: [ids.C2] }], context_packet: {} });
+  assert.equal(r.issues[0].redacted, true);
+});
+
 test('遮蔽：問題沒有等級也沒有引用 → 當成 restricted', () => {
   const { access } = setup();
   const r = access.redactReviewFor('Erin', { issues: [{ text: 'something' }], context_packet: {} });

@@ -24,3 +24,19 @@ export const DRAFTS = {
 export const RESTRICTED_QUOTES = Object.entries(CONTEXT)
   .filter(([, c]) => c.sensitivity === 'restricted')
   .flatMap(([k, c]) => [c.source_quote, MESSAGES[k].text]);
+
+/** 一則 demo 對話 → 訊息、脈絡、context_added 事件。回傳 { messageId, itemId } */
+export function addConversation(store, key) {
+  const m = MESSAGES[key];
+  const messageId = store.insertMessage({ source: 'discord', ...m, url: `https://discord.com/channels/demo/${m.channel}/${key}` });
+  const itemId = store.insertContextItem({ ...CONTEXT[key], source_message_id: messageId });
+  store.insertEvent({ type: 'context_added', payload: { item_id: itemId, topics: CONTEXT[key].topics } });
+  return { messageId, itemId };
+}
+
+/** 基本 demo：C1–C3 與 Erin 的 v1。回傳 { items: {C1,C2,C3}, v1 } */
+export function seedBase(store) {
+  const items = {};
+  for (const key of ['C1', 'C2', 'C3']) items[key] = addConversation(store, key).itemId;
+  return { items, v1: store.insertDraft(DRAFTS.v1) };
+}

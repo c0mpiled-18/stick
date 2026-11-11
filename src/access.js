@@ -105,11 +105,12 @@ export function createAccess({ store = defaultDb, people = DEFAULT_PEOPLE } = {}
   function redactReviewFor(viewer, review) {
     if (!review) return review;
     const issues = (review.issues ?? []).map((issue) => {
-      const level = issue.sensitivity && LEVELS.includes(issue.sensitivity)
-        ? issue.sensitivity
-        : issue.cited_item_ids?.length
-          ? sensitivityOfItems(issue.cited_item_ids)
-          : 'restricted';
+      // 取「標的等級」與「引用算出的等級」較高者：審稿程式標低了也不會放行
+      const labeled = LEVELS.includes(issue.sensitivity) ? issue.sensitivity : null;
+      const derived = issue.cited_item_ids?.length ? sensitivityOfItems(issue.cited_item_ids) : null;
+      const level = labeled || derived
+        ? LEVELS[Math.max(LEVELS.indexOf(labeled ?? 'public'), LEVELS.indexOf(derived ?? 'public'))]
+        : 'restricted';
       if (canSee(viewer, level)) return { ...issue, sensitivity: level };
       return { text: REDACTED_TEXT, redacted: true };
     });

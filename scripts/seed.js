@@ -9,7 +9,7 @@
 
 import { existsSync, rmSync } from 'node:fs';
 import { openStore } from '../src/db.js';
-import { MESSAGES, CONTEXT, DRAFTS } from './demo-data.js';
+import { CONTEXT, DRAFTS, addConversation } from './demo-data.js';
 
 const args = new Set(process.argv.slice(2));
 const path = process.env.STICK_DB || './stick.db';
@@ -20,15 +20,6 @@ if (args.has('--reset')) {
 }
 
 const store = openStore(path);
-
-/** 一則訊息 → 訊息、脈絡、事件。回傳 { messageId, itemId } */
-export function addConversation(s, key) {
-  const m = MESSAGES[key];
-  const messageId = s.insertMessage({ source: 'discord', ...m, url: `https://discord.com/channels/demo/${m.channel}/${key}` });
-  const itemId = s.insertContextItem({ ...CONTEXT[key], source_message_id: messageId });
-  s.insertEvent({ type: 'context_added', payload: { item_id: itemId, topics: CONTEXT[key].topics } });
-  return { messageId, itemId };
-}
 
 const only = args.has('--v2') || args.has('--c4');
 

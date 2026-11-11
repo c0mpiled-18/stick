@@ -31,7 +31,9 @@ async function handleReview(msg, raw) {
   });
   const result = await review.reviewDraft({ draftId, trigger: 'submitted', withStick: true });
   const shown = access?.redactReviewFor ? await access.redactReviewFor(msg.author, result) : result;
-  const issues = typeof shown.issues === 'string' ? JSON.parse(shown.issues) : shown.issues ?? [];
+  const all = typeof shown.issues === 'string' ? JSON.parse(shown.issues) : shown.issues ?? [];
+  let kept = false; // 被遮蔽的問題合併成一條，跟網頁一致，也不透露有幾條
+  const issues = all.filter((i) => !i.redacted || (!kept && (kept = true)));
   const lines = issues.map((i, n) => `${n + 1}. ${i.text}${i.suggestion ? ` → ${i.suggestion}` : ''}`);
   return raw.reply(`**${shown.verdict}**（第 ${prev ? prev.revision + 1 : 1} 版）\n${lines.join('\n') || '沒有問題。'}`.slice(0, 1900));
 }

@@ -137,7 +137,7 @@ SQLite 一個檔 `stick.db`，五張表，**只新增、不修改、不刪除**�
 - [x] 測試：每個職位 × 每個等級，16 個全過（20:14）
 - [ ] `scripts/compare.js`：有無 Stick 各 5 次。**程式已寫好（20:16），等 C 的 `src/review.js` 合進來才能跑**：`node --env-file=.env scripts/compare.js`
 - [x] `scripts/leak-check.js`：Erin 視角限閱原話出現 0 次；故意標錯等級的審稿抓得到（20:16）。C 的伺服器好了加 `--url .../api/state?viewer=Erin` 一起掃
-- [x] demo 發言腳本 `scripts/speak.js`（20:25，在 `feat/access`）：`node --env-file=.env scripts/speak.js base`（C1–C3）、`C4`、`v1`；`--dry` 只印不送。**還沒實際送過：等 webhook 網址。**
+- [x] demo 發言腳本 `scripts/speak.js`（20:25，在 `feat/access`）：`node --env-file=.env scripts/speak.js base`（C1–C3）、`C4`、`v1`；`--dry` 只印不送。**20:28 已用 webhook 實際送出測試訊息（HTTP 200）。** 目前只有 `DISCORD_WEBHOOK_ENG_INCIDENT`（C2、C3 可發；應建在 `decision`），C1、C4 還缺 `discussion` 的 webhook。seed 的事件格式已對齊 A：`{ context_item_ids, topics, message_id }`。
   - 設定：在 Discord 對要用的頻道「編輯頻道 → 整合 → Webhook → 新 Webhook → 複製網址」，放進自己的 `.env`（不進 repo、不貼聊天）：`DISCORD_WEBHOOK_ENG_GENERAL`、`DISCORD_WEBHOOK_ENG_INCIDENT`、選填 `DISCORD_WEBHOOK_PR_DRAFTS`。變數名照 demo 的頻道角色取，網址指到實際頻道就好（沿用 `一般`／`dev-process` 也可以）。
   - **給 Felix（A）**：webhook 訊息的 `author.bot` 是 true、`message.webhookId` 有值。機器人要把「有 `webhookId` 且名字在 `config/people.json` 別名裡」的訊息當成人的訊息，不能一律略過，否則 Dana 的話進不了脈絡。
 

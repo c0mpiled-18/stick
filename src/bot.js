@@ -22,8 +22,8 @@ client.once(Events.ClientReady, (c) => {
 
 async function handleReview(msg, raw) {
   const text = msg.text.replace(/^!review\s*/i, '').trim();
-  if (!text) return raw.reply('用法：`!review <稿件內容>`');
-  if (!db || !review) return raw.reply('審稿模組還沒接上。');
+  if (!text) return raw.reply('Usage: `!review <draft text>`');
+  if (!db || !review) return raw.reply('Review module is not connected yet.');
   const prev = (await db.listDrafts()).filter((d) => d.author === msg.author).at(-1);
   const draftId = await db.insertDraft({
     author: msg.author, title: text.slice(0, 40), text,
@@ -35,7 +35,7 @@ async function handleReview(msg, raw) {
   let kept = false; // 被遮蔽的問題合併成一條，跟網頁一致，也不透露有幾條
   const issues = all.filter((i) => !i.redacted || (!kept && (kept = true)));
   const lines = issues.map((i, n) => `${n + 1}. ${i.text}${i.suggestion ? ` → ${i.suggestion}` : ''}`);
-  return raw.reply(`**${shown.verdict}**（第 ${prev ? prev.revision + 1 : 1} 版）\n${lines.join('\n') || '沒有問題。'}`.slice(0, 1900));
+  return raw.reply(`**${shown.verdict}** (revision ${prev ? prev.revision + 1 : 1})\n${lines.join('\n') || 'No issues found.'}`.slice(0, 1900));
 }
 
 client.on(Events.MessageCreate, async (raw) => {

@@ -191,6 +191,8 @@ SQLite 一個檔 `stick.db`，五張表，**只新增、不修改、不刪除**�
 
 ## 卡住
 
+- 21:08 antonshuo（經碩展同意）：改了 Felix 的 `src/bot.js` 三行回覆文字為英文（`(revision N)`、`No issues found.`、用法與未接上提示），只動字串。**Felix 要重啟機器人才會生效。**
+
 - 20:47 ryan：**`review.js` 撞工了，已照 20:38 的決定收斂。** 我 20:36 在 `feat/agent` 推了一版 `src/review.js`（`64cd469`），沒看到 antonshuo 20:38 也做了。現在 `feat/agent` 用的是 antonshuo 那版，我的留在歷史裡，合併時 `src/review.js` 不會衝突。兩版的差別，想採用的話當面講：(1) 我那版的結論由程式定（引用到 restricted → `block`，其餘 → `needs_change`），現行版採模型說的；(2) 現行版的 `issues[].quote` 只有一句，多個出處共用。另外提醒 Felix：`claude-sonnet-5-5` 不收強制的 `tool_choice`（`tool`／`any` 會回 400），現行版用 `output_config.format` 沒這個問題。
 - 20:47 ryan：我的 Discord 帳號名稱還沒給，拿到後請 antonshuo 加進 `config/people.json` 的 Erin `aliases`。
 

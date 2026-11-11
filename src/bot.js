@@ -41,7 +41,7 @@ client.on(Events.MessageCreate, async (raw) => {
   if (!msg) return;
   console.log(`[msg] #${msg.channel} ${msg.author}(${msg.role}): ${msg.text.slice(0, 80)} ${msg.url}`);
   try {
-    if (/^!review\b/i.test(msg.text) && msg.channelRule.review) return await handleReview(msg, raw);
+    if (/^!review\b/i.test(msg.text)) return await handleReview(msg, raw); // 交稿不進脈絡
     if (!db) return;
     const ids = await ingestMessage(msg, { db });
     if (ids.length) {

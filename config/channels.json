@@ -1,13 +1,28 @@
 {
-  "_note": "頻道 → 敏感等級下限。aliases 讓現有頻道暫代，等三個正式頻道開好就不需要。",
+  "_note": "頻道 → 敏感等級下限。aliases 讓現有頻道暫代正式名稱（今晚的伺服器是 discussion／decision）。pr-drafts 不存在時，!review 在任何已設定的頻道都收。",
   "channels": {
-    "eng-general":  { "floor": "internal",   "ingest": true },
-    "eng-incident": { "floor": "restricted", "ingest": true },
-    "pr-drafts":    { "ingest": false, "review": true }
+    "eng-general": {
+      "floor": "internal",
+      "ingest": true
+    },
+    "eng-incident": {
+      "floor": "restricted",
+      "ingest": true
+    },
+    "pr-drafts": {
+      "ingest": false,
+      "review": true
+    }
   },
   "aliases": {
     "一般": "eng-general",
-    "dev-process": "eng-incident"
+    "dev-process": "eng-incident",
+    "discussion": "eng-general",
+    "decision": "eng-incident"
   },
-  "webhookSpeakers": ["Dana", "Ben", "Erin"]
+  "webhookSpeakers": [
+    "Dana",
+    "Ben",
+    "Erin"
+  ]
 }
